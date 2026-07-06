@@ -20,6 +20,7 @@ import { Route as DeliveryIndexRouteImport } from './routes/delivery.index'
 import { Route as QuotesNewRouteImport } from './routes/quotes.new'
 import { Route as QuotesIdRouteImport } from './routes/quotes.$id'
 import { Route as InvoicesIdRouteImport } from './routes/invoices.$id'
+import { Route as DeliveryIdRouteImport } from './routes/delivery.$id'
 
 const QuotesRoute = QuotesRouteImport.update({
   id: '/quotes',
@@ -76,6 +77,11 @@ const InvoicesIdRoute = InvoicesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => InvoicesRoute,
 } as any)
+const DeliveryIdRoute = DeliveryIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DeliveryRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/delivery': typeof DeliveryRouteWithChildren
   '/invoices': typeof InvoicesRouteWithChildren
   '/quotes': typeof QuotesRouteWithChildren
+  '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
   '/quotes/$id': typeof QuotesIdRoute
   '/quotes/new': typeof QuotesNewRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
   '/quotes/$id': typeof QuotesIdRoute
   '/quotes/new': typeof QuotesNewRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/delivery': typeof DeliveryRouteWithChildren
   '/invoices': typeof InvoicesRouteWithChildren
   '/quotes': typeof QuotesRouteWithChildren
+  '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
   '/quotes/$id': typeof QuotesIdRoute
   '/quotes/new': typeof QuotesNewRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/invoices'
     | '/quotes'
+    | '/delivery/$id'
     | '/invoices/$id'
     | '/quotes/$id'
     | '/quotes/new'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/delivery/$id'
     | '/invoices/$id'
     | '/quotes/$id'
     | '/quotes/new'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/invoices'
     | '/quotes'
+    | '/delivery/$id'
     | '/invoices/$id'
     | '/quotes/$id'
     | '/quotes/new'
@@ -240,14 +252,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvoicesIdRouteImport
       parentRoute: typeof InvoicesRoute
     }
+    '/delivery/$id': {
+      id: '/delivery/$id'
+      path: '/$id'
+      fullPath: '/delivery/$id'
+      preLoaderRoute: typeof DeliveryIdRouteImport
+      parentRoute: typeof DeliveryRoute
+    }
   }
 }
 
 interface DeliveryRouteChildren {
+  DeliveryIdRoute: typeof DeliveryIdRoute
   DeliveryIndexRoute: typeof DeliveryIndexRoute
 }
 
 const DeliveryRouteChildren: DeliveryRouteChildren = {
+  DeliveryIdRoute: DeliveryIdRoute,
   DeliveryIndexRoute: DeliveryIndexRoute,
 }
 
