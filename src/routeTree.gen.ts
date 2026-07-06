@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as QuotesRouteImport } from './routes/quotes'
+import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QuotesIndexRouteImport } from './routes/quotes.index'
@@ -19,6 +20,11 @@ import { Route as QuotesIdRouteImport } from './routes/quotes.$id'
 const QuotesRoute = QuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicesRoute = InvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -50,6 +56,7 @@ const QuotesIdRoute = QuotesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/invoices': typeof InvoicesRoute
   '/quotes': typeof QuotesRouteWithChildren
   '/quotes/$id': typeof QuotesIdRoute
   '/quotes/new': typeof QuotesNewRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/invoices': typeof InvoicesRoute
   '/quotes/$id': typeof QuotesIdRoute
   '/quotes/new': typeof QuotesNewRoute
   '/quotes': typeof QuotesIndexRoute
@@ -66,6 +74,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/invoices': typeof InvoicesRoute
   '/quotes': typeof QuotesRouteWithChildren
   '/quotes/$id': typeof QuotesIdRoute
   '/quotes/new': typeof QuotesNewRoute
@@ -76,16 +85,18 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/invoices'
     | '/quotes'
     | '/quotes/$id'
     | '/quotes/new'
     | '/quotes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/quotes/$id' | '/quotes/new' | '/quotes'
+  to: '/' | '/auth' | '/invoices' | '/quotes/$id' | '/quotes/new' | '/quotes'
   id:
     | '__root__'
     | '/'
     | '/auth'
+    | '/invoices'
     | '/quotes'
     | '/quotes/$id'
     | '/quotes/new'
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  InvoicesRoute: typeof InvoicesRoute
   QuotesRoute: typeof QuotesRouteWithChildren
 }
 
@@ -105,6 +117,13 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/quotes'
       preLoaderRoute: typeof QuotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoices': {
+      id: '/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof InvoicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -163,6 +182,7 @@ const QuotesRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  InvoicesRoute: InvoicesRoute,
   QuotesRoute: QuotesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
