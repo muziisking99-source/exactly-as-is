@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Nitro externalizes tslib (NonBundleablePackages) but Vercel needs the full package
+  // traced into the server function — otherwise SSR crashes with ERR_MODULE_NOT_FOUND.
+  nitro: {
+    // @ts-expect-error lovable types omit traceDeps; forwarded to nitro/vite at runtime
+    traceDeps: ["tslib*"],
+  },
 });
