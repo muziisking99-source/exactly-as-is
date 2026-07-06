@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as QuotesRouteImport } from './routes/quotes'
+import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -25,6 +26,11 @@ import { Route as DeliveryIdRouteImport } from './routes/delivery.$id'
 const QuotesRoute = QuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsRoute = JobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvoicesRoute = InvoicesRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/invoices': typeof InvoicesRouteWithChildren
+  '/jobs': typeof JobsRoute
   '/quotes': typeof QuotesRouteWithChildren
   '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/jobs': typeof JobsRoute
   '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
   '/quotes/$id': typeof QuotesIdRoute
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/delivery': typeof DeliveryRouteWithChildren
   '/invoices': typeof InvoicesRouteWithChildren
+  '/jobs': typeof JobsRoute
   '/quotes': typeof QuotesRouteWithChildren
   '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/delivery'
     | '/invoices'
+    | '/jobs'
     | '/quotes'
     | '/delivery/$id'
     | '/invoices/$id'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/jobs'
     | '/delivery/$id'
     | '/invoices/$id'
     | '/quotes/$id'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/delivery'
     | '/invoices'
+    | '/jobs'
     | '/quotes'
     | '/delivery/$id'
     | '/invoices/$id'
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DeliveryRoute: typeof DeliveryRouteWithChildren
   InvoicesRoute: typeof InvoicesRouteWithChildren
+  JobsRoute: typeof JobsRoute
   QuotesRoute: typeof QuotesRouteWithChildren
 }
 
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/quotes'
       preLoaderRoute: typeof QuotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs': {
+      id: '/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof JobsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invoices': {
@@ -310,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DeliveryRoute: DeliveryRouteWithChildren,
   InvoicesRoute: InvoicesRouteWithChildren,
+  JobsRoute: JobsRoute,
   QuotesRoute: QuotesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
