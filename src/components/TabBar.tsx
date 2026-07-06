@@ -20,11 +20,12 @@ export function TabBar({
             key={t.value}
             onClick={() => onChange(t.value)}
             className={cn(
-              "px-3 py-2 text-[11px] uppercase tracking-[0.1em] font-semibold border-b-2 -mb-px whitespace-nowrap transition-colors",
+              "px-3 py-2 text-[11px] uppercase tracking-[0.1em] font-semibold border-b-2 -mb-px whitespace-nowrap transition-all duration-300",
               active
-                ? "border-royal text-ink"
-                : "border-transparent text-muted-navy hover:text-ink",
+                ? "border-royal text-royal"
+                : "border-transparent text-muted-navy hover:text-ink hover:border-border",
             )}
+            style={{ transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}
           >
             {t.label}
             {typeof t.count === "number" && (

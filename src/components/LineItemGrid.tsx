@@ -34,13 +34,13 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
   }
 
   return (
-    <section className="bg-card border border-border rounded-md p-4 md:p-6">
+    <section className="glass-card p-4 md:p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-[11px] uppercase tracking-[0.14em] text-muted-navy">Line Items</h2>
         <button
           type="button"
           onClick={() => onItemsChange([...items, emptyLineItem()])}
-          className="btn-uppercase inline-flex items-center gap-1 px-2 py-1 text-royal border border-royal/30 hover:bg-blue-50"
+          className="btn-uppercase inline-flex items-center gap-1 px-2 py-1 text-royal border border-royal/30 hover:bg-royal/10"
         >
           <Plus className="w-3 h-3" /> Add
         </button>
@@ -79,7 +79,7 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
               placeholder="Description"
               value={it.description}
               onChange={(e) => updateItem(idx, { description: e.target.value })}
-              className="px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+              className="input-field"
             />
             <input
               type="number"
@@ -87,7 +87,7 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
               step="0.5"
               value={it.quantity}
               onChange={(e) => updateItem(idx, { quantity: parseFloat(e.target.value) || 0 })}
-              className="px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none text-right"
+              className="input-field text-right"
             />
             <input
               type="number"
@@ -95,7 +95,7 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
               step="0.01"
               value={it.unit_price}
               onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.target.value) || 0 })}
-              className="px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none text-right"
+              className="input-field text-right"
             />
             <div className="text-right text-sm font-medium text-ink">
               {money(it.quantity * it.unit_price)}
@@ -119,7 +119,7 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
             min={0}
             value={taxRate}
             onChange={(e) => onTaxRateChange(parseFloat(e.target.value) || 0)}
-            className="mt-1 w-32 px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+            className="mt-1 w-32 input-field"
           />
         </div>
         <div className="w-full md:w-64 space-y-1 text-sm">
@@ -131,7 +131,7 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
             <span>Tax</span>
             <span>{money(tax)}</span>
           </div>
-          <div className="flex justify-between font-serif text-lg text-ink border-t border-border pt-2">
+          <div className="flex justify-between font-serif text-lg text-ink border-t border-border pt-2 font-mono">
             <span>Total</span>
             <span>{money(total)}</span>
           </div>

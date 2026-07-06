@@ -15,7 +15,11 @@ function Page() {
         {
           value: "unpaid",
           label: "Unpaid",
-          match: (d) => d.status === "unpaid" || d.status === "sent" || (isOverdue(d) && d.status !== "paid"),
+          match: (d) =>
+            d.status === "unpaid" ||
+            d.status === "partially_paid" ||
+            d.status === "sent" ||
+            (isOverdue(d) && d.status !== "paid"),
         },
         { value: "paid", label: "Paid", match: (d) => d.status === "paid" },
         { value: "cancelled", label: "Cancelled", match: (d) => d.status === "cancelled" },

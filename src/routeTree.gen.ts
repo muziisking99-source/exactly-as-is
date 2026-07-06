@@ -22,10 +22,11 @@ import { Route as QuotesIndexRouteImport } from './routes/quotes.index'
 import { Route as InvoicesIndexRouteImport } from './routes/invoices.index'
 import { Route as DeliveryIndexRouteImport } from './routes/delivery.index'
 import { Route as QuotesNewRouteImport } from './routes/quotes.new'
-import { Route as InvoicesNewRouteImport } from './routes/invoices.new'
 import { Route as QuotesIdRouteImport } from './routes/quotes.$id'
+import { Route as InvoicesNewRouteImport } from './routes/invoices.new'
 import { Route as InvoicesIdRouteImport } from './routes/invoices.$id'
 import { Route as DeliveryIdRouteImport } from './routes/delivery.$id'
+import { Route as CustomersIdStatementRouteImport } from './routes/customers.$id.statement'
 
 const TrackerRoute = TrackerRouteImport.update({
   id: '/tracker',
@@ -92,15 +93,15 @@ const QuotesNewRoute = QuotesNewRouteImport.update({
   path: '/new',
   getParentRoute: () => QuotesRoute,
 } as any)
-const InvoicesNewRoute = InvoicesNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => InvoicesRoute,
-} as any)
 const QuotesIdRoute = QuotesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => QuotesRoute,
+} as any)
+const InvoicesNewRoute = InvoicesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => InvoicesRoute,
 } as any)
 const InvoicesIdRoute = InvoicesIdRouteImport.update({
   id: '/$id',
@@ -112,11 +113,16 @@ const DeliveryIdRoute = DeliveryIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DeliveryRoute,
 } as any)
+const CustomersIdStatementRoute = CustomersIdStatementRouteImport.update({
+  id: '/$id/statement',
+  path: '/$id/statement',
+  getParentRoute: () => CustomersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/customers': typeof CustomersRoute
+  '/customers': typeof CustomersRouteWithChildren
   '/delivery': typeof DeliveryRouteWithChildren
   '/invoices': typeof InvoicesRouteWithChildren
   '/jobs': typeof JobsRoute
@@ -131,11 +137,12 @@ export interface FileRoutesByFullPath {
   '/delivery/': typeof DeliveryIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
   '/quotes/': typeof QuotesIndexRoute
+  '/customers/$id/statement': typeof CustomersIdStatementRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/customers': typeof CustomersRoute
+  '/customers': typeof CustomersRouteWithChildren
   '/jobs': typeof JobsRoute
   '/products': typeof ProductsRoute
   '/tracker': typeof TrackerRoute
@@ -147,12 +154,13 @@ export interface FileRoutesByTo {
   '/delivery': typeof DeliveryIndexRoute
   '/invoices': typeof InvoicesIndexRoute
   '/quotes': typeof QuotesIndexRoute
+  '/customers/$id/statement': typeof CustomersIdStatementRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/customers': typeof CustomersRoute
+  '/customers': typeof CustomersRouteWithChildren
   '/delivery': typeof DeliveryRouteWithChildren
   '/invoices': typeof InvoicesRouteWithChildren
   '/jobs': typeof JobsRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/delivery/': typeof DeliveryIndexRoute
   '/invoices/': typeof InvoicesIndexRoute
   '/quotes/': typeof QuotesIndexRoute
+  '/customers/$id/statement': typeof CustomersIdStatementRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/delivery/'
     | '/invoices/'
     | '/quotes/'
+    | '/customers/$id/statement'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/delivery'
     | '/invoices'
     | '/quotes'
+    | '/customers/$id/statement'
   id:
     | '__root__'
     | '/'
@@ -223,12 +234,13 @@ export interface FileRouteTypes {
     | '/delivery/'
     | '/invoices/'
     | '/quotes/'
+    | '/customers/$id/statement'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  CustomersRoute: typeof CustomersRoute
+  CustomersRoute: typeof CustomersRouteWithChildren
   DeliveryRoute: typeof DeliveryRouteWithChildren
   InvoicesRoute: typeof InvoicesRouteWithChildren
   JobsRoute: typeof JobsRoute
@@ -253,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuotesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jobs': {
       id: '/jobs'
       path: '/jobs'
@@ -274,13 +293,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeliveryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/customers': {
       id: '/customers'
       path: '/customers'
@@ -288,11 +300,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/products': {
-      id: '/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof ProductsRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -330,19 +342,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuotesNewRouteImport
       parentRoute: typeof QuotesRoute
     }
-    '/invoices/new': {
-      id: '/invoices/new'
-      path: '/new'
-      fullPath: '/invoices/new'
-      preLoaderRoute: typeof InvoicesNewRouteImport
-      parentRoute: typeof InvoicesRoute
-    }
     '/quotes/$id': {
       id: '/quotes/$id'
       path: '/$id'
       fullPath: '/quotes/$id'
       preLoaderRoute: typeof QuotesIdRouteImport
       parentRoute: typeof QuotesRoute
+    }
+    '/invoices/new': {
+      id: '/invoices/new'
+      path: '/new'
+      fullPath: '/invoices/new'
+      preLoaderRoute: typeof InvoicesNewRouteImport
+      parentRoute: typeof InvoicesRoute
     }
     '/invoices/$id': {
       id: '/invoices/$id'
@@ -358,8 +370,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeliveryIdRouteImport
       parentRoute: typeof DeliveryRoute
     }
+    '/customers/$id/statement': {
+      id: '/customers/$id/statement'
+      path: '/$id/statement'
+      fullPath: '/customers/$id/statement'
+      preLoaderRoute: typeof CustomersIdStatementRouteImport
+      parentRoute: typeof CustomersRoute
+    }
   }
 }
+
+interface CustomersRouteChildren {
+  CustomersIdStatementRoute: typeof CustomersIdStatementRoute
+}
+
+const CustomersRouteChildren: CustomersRouteChildren = {
+  CustomersIdStatementRoute: CustomersIdStatementRoute,
+}
+
+const CustomersRouteWithChildren = CustomersRoute._addFileChildren(
+  CustomersRouteChildren,
+)
 
 interface DeliveryRouteChildren {
   DeliveryIdRoute: typeof DeliveryIdRoute
@@ -409,7 +440,7 @@ const QuotesRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  CustomersRoute: CustomersRoute,
+  CustomersRoute: CustomersRouteWithChildren,
   DeliveryRoute: DeliveryRouteWithChildren,
   InvoicesRoute: InvoicesRouteWithChildren,
   JobsRoute: JobsRoute,
@@ -420,3 +451,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

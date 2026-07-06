@@ -29,7 +29,7 @@ export function ProductPicker({ productId, onSelect }: Props) {
         <button
           type="button"
           className={cn(
-            "w-full flex items-center justify-between gap-1 px-2 py-2 text-xs border border-border rounded bg-white hover:bg-secondary/50 outline-none focus:border-royal",
+            "w-full flex items-center justify-between gap-1 px-2 py-2 text-xs border border-border rounded-lg bg-card hover:bg-secondary/50 outline-none focus:border-royal",
             !selected && "text-muted-navy",
           )}
         >

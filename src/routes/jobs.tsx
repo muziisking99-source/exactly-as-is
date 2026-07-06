@@ -12,6 +12,8 @@ import { generatePDF } from "@/lib/pdf";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TabBar } from "@/components/TabBar";
 import { DeleteDocButton } from "@/components/DeleteDocButton";
+import { InkCheck } from "@/components/InkCheck";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { Plus, Trash2, Download, ChevronDown, ChevronRight } from "lucide-react";
 import { fmtDate } from "@/lib/format";
 
@@ -43,12 +45,12 @@ function JobsPage() {
         <p className="text-sm text-muted-navy mt-1">Track factory tasks per job.</p>
       </div>
 
-      <div className="bg-card border border-border rounded-md">
+      <div className="glass-card overflow-hidden">
         <div className="p-4 border-b border-border">
           <TabBar tabs={counted} value={tab} onChange={setTab} />
         </div>
         {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-navy">Loading…</div>
+          <TableSkeleton rows={6} className="py-2" />
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-navy">No job cards yet. Create one from a quote or invoice.</div>
         ) : (
@@ -102,11 +104,11 @@ function JobRow({
           {job.customer_name || "—"} · {fmtDate(job.doc_date)} · {doneCount}/{totalCount} tasks
         </div>
       </div>
-      <StatusBadge status={job.status} />
+      <StatusBadge status={job.status} docId={job.id} />
       <select
         value={job.status}
         onChange={(e) => updateStatus.mutate({ id: job.id, status: e.target.value, action: `status_${e.target.value}` })}
-        className="text-xs px-2 py-1 border border-border rounded bg-white"
+        className="text-xs px-2 py-1 border border-border rounded-lg bg-card text-ink"
       >
         <option value="pending">Pending</option>
         <option value="in_progress">In Progress</option>
@@ -114,7 +116,7 @@ function JobRow({
       </select>
       <button
         onClick={() => generatePDF(job, [], [])}
-        className="btn-uppercase px-3 py-1.5 border border-border bg-white text-ink hover:bg-secondary inline-flex items-center gap-1"
+        className="btn-uppercase px-3 py-1.5 border border-border bg-card text-ink hover:bg-secondary inline-flex items-center gap-1"
       >
         <Download className="w-3 h-3" /> PDF
       </button>
@@ -133,14 +135,12 @@ function TaskPanel({ jobId, tasks }: { jobId: string; tasks: any[] }) {
     <div className="bg-secondary/30 px-8 py-4 space-y-2 border-t border-border">
       {tasks.length === 0 && <div className="text-xs text-muted-navy">No tasks yet.</div>}
       {tasks.map((t) => (
-        <div key={t.id} className="flex items-center gap-3 bg-white rounded p-2 border border-border/60">
-          <input
-            type="checkbox"
+        <div key={t.id} className="flex items-center gap-3 bg-card rounded-lg p-2 border border-border/60">
+          <InkCheck
             checked={t.status === "completed"}
-            onChange={(e) =>
-              toggle.mutate({ id: t.id, status: e.target.checked ? "completed" : "pending" })
+            onChange={(checked) =>
+              toggle.mutate({ id: t.id, status: checked ? "completed" : "pending" })
             }
-            className="w-4 h-4 accent-royal"
           />
           <span
             className={`flex-1 text-sm ${t.status === "completed" ? "line-through text-muted-navy" : "text-ink"}`}
@@ -165,9 +165,9 @@ function TaskPanel({ jobId, tasks }: { jobId: string; tasks: any[] }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Add task…"
-          className="flex-1 px-3 py-1.5 text-sm border border-border rounded bg-white focus:border-royal outline-none"
+          className="flex-1 input-field text-sm py-1.5"
         />
-        <button className="btn-uppercase px-3 py-1.5 bg-royal text-white inline-flex items-center gap-1">
+        <button className="btn-uppercase px-3 py-1.5 bg-royal text-primary-foreground inline-flex items-center gap-1">
           <Plus className="w-3 h-3" /> Add
         </button>
       </form>

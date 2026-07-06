@@ -41,7 +41,7 @@ export function QuoteForm() {
         onChange={(patch) => update(patch)}
       />
 
-      <section className="bg-card border border-border rounded-md p-4 md:p-6 space-y-4">
+      <section className="glass-card p-4 md:p-6 space-y-4">
         <h2 className="text-[11px] uppercase tracking-[0.14em] text-muted-navy">Dates</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
@@ -50,19 +50,19 @@ export function QuoteForm() {
               type="date"
               value={form.doc_date}
               onChange={(e) => update({ doc_date: e.target.value })}
-              className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+              className="mt-1 input-field"
             />
           </div>
         </div>
       </section>
 
-      <section className="bg-card border border-border rounded-md p-4 md:p-6 space-y-4">
+      <section className="glass-card p-4 md:p-6 space-y-4">
         <h2 className="text-[11px] uppercase tracking-[0.14em] text-muted-navy">Project</h2>
         <textarea
           value={form.project_description}
           onChange={(e) => update({ project_description: e.target.value })}
           rows={3}
-          className="w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+          className="w-full input-field"
           placeholder="Describe the job / order…"
         />
       </section>
@@ -79,7 +79,7 @@ export function QuoteForm() {
           type="button"
           onClick={() => submit("draft")}
           disabled={create.isPending}
-          className="btn-uppercase px-4 py-2 border border-border bg-white text-ink hover:bg-secondary"
+          className="btn-uppercase px-4 py-2 border border-border bg-card text-ink hover:bg-secondary"
         >
           Save as Draft
         </button>
@@ -87,7 +87,7 @@ export function QuoteForm() {
           type="button"
           onClick={() => submit("sent")}
           disabled={create.isPending}
-          className="btn-uppercase px-4 py-2 bg-royal text-white hover:bg-royal-deep"
+          className="btn-uppercase px-4 py-2 bg-royal text-primary-foreground hover:bg-royal-deep"
         >
           Save & Send
         </button>

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useDocuments } from "@/lib/queries";
 import { StatusBadge } from "@/components/StatusBadge";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { fmtDate, money, DOC_LABELS } from "@/lib/format";
 import { FileText, Receipt, Truck, ClipboardList } from "lucide-react";
 
@@ -11,7 +12,6 @@ function TrackerPage() {
 
   const quotes = docs.filter((d) => d.doc_type === "quote");
 
-  // Group children by parent quote
   const relatedToQuote = (quoteId: string) =>
     docs.filter((d) => d.parent_id === quoteId || (d.doc_type === "delivery_note" && parentInvoiceOf(d.parent_id, quoteId)));
 
@@ -29,17 +29,17 @@ function TrackerPage() {
       </div>
 
       {isLoading ? (
-        <div className="p-8 text-center text-sm text-muted-navy">Loading…</div>
+        <TableSkeleton rows={5} className="glass-card py-2" />
       ) : quotes.length === 0 ? (
-        <div className="bg-card border border-border rounded-md p-8 text-center text-sm text-muted-navy">
+        <div className="glass-card p-8 text-center text-sm text-muted-navy">
           No quotes yet.
         </div>
       ) : (
-        <ol className="space-y-4">
+        <div className="space-y-4">
           {quotes.map((q) => {
             const related = relatedToQuote(q.id);
             return (
-              <li key={q.id} className="bg-card border border-border rounded-md p-4 md:p-6">
+              <div key={q.id} className="glass-card p-4 md:p-6 hover-lift">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <Link to={`/quotes/${q.id}`} className="font-serif text-xl text-ink hover:text-royal">
@@ -48,7 +48,7 @@ function TrackerPage() {
                     <div className="text-sm text-muted-navy">{q.customer_name || "—"} · {fmtDate(q.doc_date)}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge status={q.status} />
+                    <StatusBadge status={q.status} docId={q.id} />
                     <span className="text-sm text-ink font-medium">{money(q.total)}</span>
                   </div>
                 </div>
@@ -66,16 +66,16 @@ function TrackerPage() {
                         >
                           {DOC_LABELS[r.doc_type]} · {r.doc_number}
                         </Link>
-                        <StatusBadge status={r.status} />
+                        <StatusBadge status={r.status} docId={r.id} />
                         <span className="text-xs text-muted-navy ml-auto">{fmtDate(r.created_at)}</span>
                       </li>
                     ))}
                   </ul>
                 )}
-              </li>
+              </div>
             );
           })}
-        </ol>
+        </div>
       )}
     </div>
   );

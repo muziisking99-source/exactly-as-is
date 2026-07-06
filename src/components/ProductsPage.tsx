@@ -89,13 +89,13 @@ export function ProductsPage() {
         <button
           type="button"
           onClick={openNew}
-          className="btn-uppercase inline-flex items-center gap-1 px-4 py-2 bg-royal text-white hover:bg-royal-deep"
+          className="btn-uppercase inline-flex items-center gap-1 px-4 py-2 bg-royal text-primary-foreground hover:bg-royal-deep"
         >
           <Plus className="w-4 h-4" /> Add Product
         </button>
       </div>
 
-      <div className="bg-card border border-border rounded-md overflow-hidden">
+      <div className="glass-card overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-navy">Loading…</div>
         ) : products.length === 0 ? (
@@ -152,7 +152,7 @@ export function ProductsPage() {
               <input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                className="mt-1 input-field"
               />
             </div>
             <div>
@@ -161,7 +161,7 @@ export function ProductsPage() {
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={2}
-                className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                className="mt-1 input-field"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -173,7 +173,7 @@ export function ProductsPage() {
                   step="0.01"
                   value={form.unit_price}
                   onChange={(e) => setForm((f) => ({ ...f, unit_price: parseFloat(e.target.value) || 0 }))}
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
               <div>
@@ -182,7 +182,7 @@ export function ProductsPage() {
                   value={form.unit}
                   onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
                   placeholder="e.g. each, box"
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
             </div>
@@ -192,7 +192,7 @@ export function ProductsPage() {
                 <input
                   value={form.sku}
                   onChange={(e) => setForm((f) => ({ ...f, sku: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
               <div>
@@ -200,7 +200,7 @@ export function ProductsPage() {
                 <input
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
             </div>
@@ -213,7 +213,7 @@ export function ProductsPage() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="btn-uppercase px-4 py-2 border border-border bg-white text-ink hover:bg-secondary"
+              className="btn-uppercase px-4 py-2 border border-border bg-card text-ink hover:bg-secondary"
             >
               Cancel
             </button>
@@ -221,7 +221,7 @@ export function ProductsPage() {
               type="button"
               onClick={save}
               disabled={create.isPending || update.isPending}
-              className="btn-uppercase px-4 py-2 bg-royal text-white hover:bg-royal-deep"
+              className="btn-uppercase px-4 py-2 bg-royal text-primary-foreground hover:bg-royal-deep"
             >
               Save
             </button>

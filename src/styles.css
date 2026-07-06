@@ -5,12 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-serif: "Cormorant Garamond", ui-serif, Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -43,35 +44,38 @@
 }
 
 :root {
-  --royal: #1b3fbe;
-  --royal-deep: #122e9a;
-  --eco: #1e9e5e;
-  --ink: #0d1a2e;
-  --muted-navy: #6b7e95;
-  --offwhite: #f4f7f2;
-  --danger: #ef4444;
-  --amber-warn: #f59e0b;
+  /* Trend Capital light — navy accent from invoice template */
+  --royal: #1b2a4a;
+  --royal-deep: #121f38;
+  --eco: #0d7c59;
+  --ink: #1a2332;
+  --muted-navy: #5c6b7f;
+  --offwhite: #f4f6f9;
+  --danger: #dc2626;
+  --amber-warn: #d97706;
 
-  --radius: 4px;
-  --background: #f4f7f2;
-  --foreground: #0d1a2e;
+  --radius: 10px;
+  --background: #f4f6f9;
+  --foreground: #1a2332;
   --card: #ffffff;
-  --card-foreground: #0d1a2e;
+  --card-foreground: #1a2332;
   --popover: #ffffff;
-  --popover-foreground: #0d1a2e;
-  --primary: #1b3fbe;
+  --popover-foreground: #1a2332;
+  --primary: #1b2a4a;
   --primary-foreground: #ffffff;
-  --secondary: #eef2f7;
-  --secondary-foreground: #0d1a2e;
-  --muted: #eef2f7;
-  --muted-foreground: #6b7e95;
-  --accent: #eef2f7;
-  --accent-foreground: #0d1a2e;
-  --destructive: #ef4444;
+  --secondary: #eef1f6;
+  --secondary-foreground: #1a2332;
+  --muted: #eef1f6;
+  --muted-foreground: #5c6b7f;
+  --accent: #e8edf4;
+  --accent-foreground: #1a2332;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #e2e8ee;
-  --input: #e2e8ee;
-  --ring: #1b3fbe;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1b2a4a;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -83,31 +87,168 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(ellipse 70% 45% at 0% 0%, rgba(27, 42, 74, 0.04), transparent),
+      radial-gradient(ellipse 50% 35% at 100% 100%, rgba(27, 42, 74, 0.03), transparent);
+    background-attachment: fixed;
   }
   h1, h2, h3, h4, .font-serif {
     font-family: var(--font-serif);
+    letter-spacing: -0.02em;
   }
 }
 
 @utility page-title {
   font-family: var(--font-serif);
-  font-size: 2.25rem;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  font-size: 1.875rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
   color: var(--ink);
+  font-weight: 600;
 }
 
 @utility btn-uppercase {
   text-transform: uppercase;
   font-size: 11px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   font-weight: 600;
-  border-radius: 4px;
+  border-radius: 10px;
+  transition:
+    transform 0.2s var(--ease-out-expo),
+    background-color 0.2s var(--ease-out-expo),
+    border-color 0.2s var(--ease-out-expo),
+    box-shadow 0.2s var(--ease-out-expo),
+    color 0.2s var(--ease-out-expo);
+}
+@utility btn-uppercase {
+  &:active {
+    transform: scale(0.98);
+  }
+  &:hover:not(:disabled) {
+    box-shadow: 0 4px 14px -4px rgba(27, 42, 74, 0.18);
+  }
+}
+
+@utility input-field {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--card);
+  color: var(--ink);
+  outline: none;
+  transition:
+    border-color 0.2s var(--ease-out-expo),
+    box-shadow 0.2s var(--ease-out-expo),
+    background-color 0.2s var(--ease-out-expo);
+  &:focus {
+    border-color: var(--royal);
+    box-shadow: 0 0 0 3px rgba(27, 42, 74, 0.1);
+    background-color: #fff;
+  }
+}
+
+@utility glass-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 24px -8px rgba(27, 42, 74, 0.08);
+  transition:
+    box-shadow 0.3s var(--ease-out-expo),
+    transform 0.3s var(--ease-out-expo),
+    border-color 0.3s var(--ease-out-expo);
+}
+
+@utility hover-lift {
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, border-color 0.15s ease-out;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -10px rgba(27, 42, 74, 0.12);
+    border-color: rgba(27, 42, 74, 0.1);
+  }
+}
+
+/* —— View transitions: next-sheet navigation —— */
+.vt-root {
+  view-transition-name: root;
+}
+
+@keyframes vt-slide-in-right {
+  from { transform: translateX(28px); opacity: 0.92; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes vt-slide-out-left {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-18px); opacity: 0.75; }
+}
+
+@keyframes vt-slide-in-left {
+  from { transform: translateX(-28px); opacity: 0.92; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes vt-slide-out-right {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(18px); opacity: 0.75; }
+}
+
+@keyframes vt-cross-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes vt-cross-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+html[data-vt="forward"]::view-transition-old(root) {
+  animation: vt-slide-out-left 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html[data-vt="forward"]::view-transition-new(root) {
+  animation: vt-slide-in-right 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html[data-vt="back"]::view-transition-old(root) {
+  animation: vt-slide-out-right 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html[data-vt="back"]::view-transition-new(root) {
+  animation: vt-slide-in-left 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html[data-vt="fade"]::view-transition-old(root) {
+  animation: vt-cross-fade-out 260ms ease-out both;
+}
+html[data-vt="fade"]::view-transition-new(root) {
+  animation: vt-cross-fade-in 260ms ease-out both;
+}
+
+/* —— Job task ink check draw-on —— */
+@keyframes ink-check-draw {
+  from { stroke-dashoffset: 16; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* —— Blueprint loading grid —— */
+@keyframes blueprint-breathe {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.16; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+  .blueprint-grid {
+    animation: none !important;
+    opacity: 0.1 !important;
   }
 }

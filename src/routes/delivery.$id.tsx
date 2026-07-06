@@ -16,7 +16,7 @@ function Page() {
       actions={
         <button
           onClick={() => updateStatus.mutate({ id, status: "in_transit", action: "in_transit" })}
-          className="btn-uppercase px-3 py-2 border border-border bg-white text-ink hover:bg-secondary"
+          className="btn-uppercase px-3 py-2 border border-border bg-card text-ink hover:bg-secondary"
         >
           Mark In Transit
         </button>

@@ -53,7 +53,7 @@ export function CustomerFields({ value, onChange }: Props) {
   }
 
   return (
-    <section className="bg-card border border-border rounded-md p-4 md:p-6 space-y-4">
+    <section className="glass-card p-4 md:p-6 space-y-4">
       <h2 className="text-[11px] uppercase tracking-[0.14em] text-muted-navy">Customer</h2>
       <div className="grid md:grid-cols-2 gap-4">
         <div className="relative">
@@ -64,10 +64,10 @@ export function CustomerFields({ value, onChange }: Props) {
               onChange({ customer_name: e.target.value, customer_id: null });
               setCustomerQuery(e.target.value);
             }}
-            className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+            className="mt-1 input-field"
           />
           {matches.length > 0 && value.customer_name.length > 0 && (
-            <ul className="absolute z-10 top-full left-0 right-0 bg-white border border-border rounded-md mt-1 shadow-sm max-h-48 overflow-auto">
+            <ul className="absolute z-10 top-full left-0 right-0 bg-popover border border-border rounded-lg mt-1 shadow-lg max-h-48 overflow-auto">
               {matches.map((c) => (
                 <li
                   key={c.id}
@@ -105,7 +105,7 @@ export function CustomerFields({ value, onChange }: Props) {
           <input
             value={value.customer_email ?? ""}
             onChange={(e) => onChange({ customer_email: e.target.value })}
-            className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+            className="mt-1 input-field"
           />
         </div>
         <div>
@@ -113,7 +113,7 @@ export function CustomerFields({ value, onChange }: Props) {
           <input
             value={value.customer_phone ?? ""}
             onChange={(e) => onChange({ customer_phone: e.target.value })}
-            className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+            className="mt-1 input-field"
           />
         </div>
         <div>
@@ -121,7 +121,7 @@ export function CustomerFields({ value, onChange }: Props) {
           <input
             value={value.customer_address ?? ""}
             onChange={(e) => onChange({ customer_address: e.target.value })}
-            className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+            className="mt-1 input-field"
           />
         </div>
       </div>

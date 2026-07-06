@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Plus, Pencil, Trash2, FileText } from "lucide-react";
 import {
   useCustomers,
   useCreateCustomer,
@@ -85,13 +86,13 @@ export function CustomersPage() {
         <button
           type="button"
           onClick={openNew}
-          className="btn-uppercase inline-flex items-center gap-1 px-4 py-2 bg-royal text-white hover:bg-royal-deep"
+          className="btn-uppercase inline-flex items-center gap-1 px-4 py-2 bg-royal text-primary-foreground hover:bg-royal-deep"
         >
           <Plus className="w-4 h-4" /> Add Customer
         </button>
       </div>
 
-      <div className="bg-card border border-border rounded-md overflow-hidden">
+      <div className="glass-card overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-navy">Loading…</div>
         ) : customers.length === 0 ? (
@@ -117,6 +118,13 @@ export function CustomersPage() {
                   <td className="px-4 py-3 text-sm text-muted-navy">{c.phone || "—"}</td>
                   <td className="px-4 py-3 text-sm text-muted-navy">{c.vat_number || "—"}</td>
                   <td className="px-4 py-3 text-right space-x-2">
+                    <Link
+                      to={`/customers/${c.id}/statement`}
+                      className="text-muted-navy hover:text-royal inline-block"
+                      title="Statement"
+                    >
+                      <FileText className="w-4 h-4 inline" />
+                    </Link>
                     <button type="button" onClick={() => openEdit(c)} className="text-muted-navy hover:text-royal">
                       <Pencil className="w-4 h-4 inline" />
                     </button>
@@ -146,7 +154,7 @@ export function CustomersPage() {
               <input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                className="mt-1 input-field"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -155,7 +163,7 @@ export function CustomersPage() {
                 <input
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
               <div>
@@ -163,7 +171,7 @@ export function CustomersPage() {
                 <input
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
             </div>
@@ -172,7 +180,7 @@ export function CustomersPage() {
               <input
                 value={form.billing_address}
                 onChange={(e) => setForm((f) => ({ ...f, billing_address: e.target.value }))}
-                className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                className="mt-1 input-field"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -181,7 +189,7 @@ export function CustomersPage() {
                 <input
                   value={form.vat_number}
                   onChange={(e) => setForm((f) => ({ ...f, vat_number: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
               <div>
@@ -189,7 +197,7 @@ export function CustomersPage() {
                 <input
                   value={form.contact_person}
                   onChange={(e) => setForm((f) => ({ ...f, contact_person: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                  className="mt-1 input-field"
                 />
               </div>
             </div>
@@ -199,7 +207,7 @@ export function CustomersPage() {
                 value={form.notes}
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
-                className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+                className="mt-1 input-field"
               />
             </div>
           </div>
@@ -207,7 +215,7 @@ export function CustomersPage() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="btn-uppercase px-4 py-2 border border-border bg-white text-ink hover:bg-secondary"
+              className="btn-uppercase px-4 py-2 border border-border bg-card text-ink hover:bg-secondary"
             >
               Cancel
             </button>
@@ -215,7 +223,7 @@ export function CustomersPage() {
               type="button"
               onClick={save}
               disabled={create.isPending || update.isPending}
-              className="btn-uppercase px-4 py-2 bg-royal text-white hover:bg-royal-deep"
+              className="btn-uppercase px-4 py-2 bg-royal text-primary-foreground hover:bg-royal-deep"
             >
               Save
             </button>

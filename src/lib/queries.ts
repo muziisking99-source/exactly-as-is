@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./auth";
+import { money, dueDateFromDocDate } from "./format";
 
 export type DocType = "quote" | "invoice" | "delivery_note" | "job_card";
 
@@ -99,6 +100,51 @@ export interface Profile {
   role: string;
 }
 
+export interface PaymentRow {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  payment_date: string;
+  reference: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type StatementMode = "open" | "activity";
+
+export function invoiceAmountPaid(payments: Pick<PaymentRow, "amount">[]): number {
+  return payments.reduce((s, p) => s + Number(p.amount), 0);
+}
+
+export function invoiceBalance(doc: Pick<DocumentRow, "total">, payments: Pick<PaymentRow, "amount">[]): number {
+  return Math.max(0, Number(doc.total) - invoiceAmountPaid(payments));
+}
+
+export function deriveInvoiceStatus(total: number, amountPaid: number): string {
+  if (amountPaid >= Number(total)) return "paid";
+  if (amountPaid > 0) return "partially_paid";
+  return "unpaid";
+}
+
+async function syncInvoiceStatus(invoiceId: string, invoiceTotal: number): Promise<string> {
+  const { data: payments, error } = await supabase
+    .from("payments")
+    .select("amount")
+    .eq("invoice_id", invoiceId);
+  if (error) throw error;
+  const paid = invoiceAmountPaid((payments ?? []) as PaymentRow[]);
+  const status = deriveInvoiceStatus(invoiceTotal, paid);
+  const { error: updErr } = await supabase.from("documents").update({ status }).eq("id", invoiceId);
+  if (updErr) throw updErr;
+  return status;
+}
+
+function customerMatchesInvoice(customer: CustomerRow, doc: DocumentRow): boolean {
+  if (doc.customer_id && doc.customer_id === customer.id) return true;
+  return doc.customer_name.toLowerCase() === customer.name.toLowerCase();
+}
+
 // -------- Documents --------
 export function useDocuments() {
   return useQuery({
@@ -192,6 +238,298 @@ export function useIsAdmin() {
   const { user } = useAuth();
   const { data } = useProfile(user?.id);
   return data?.role === "admin";
+}
+
+// -------- Payments --------
+export function usePayments(invoiceId: string | undefined) {
+  return useQuery({
+    queryKey: ["payments", invoiceId],
+    enabled: !!invoiceId,
+    queryFn: async (): Promise<PaymentRow[]> => {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("invoice_id", invoiceId!)
+        .order("payment_date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as PaymentRow[];
+    },
+  });
+}
+
+export function usePaymentsForInvoices(invoiceIds: string[]) {
+  const key = invoiceIds.slice().sort().join(",");
+  return useQuery({
+    queryKey: ["payments", "batch", key],
+    enabled: invoiceIds.length > 0,
+    queryFn: async (): Promise<Record<string, PaymentRow[]>> => {
+      const { data, error } = await supabase.from("payments").select("*").in("invoice_id", invoiceIds);
+      if (error) throw error;
+      const map: Record<string, PaymentRow[]> = {};
+      for (const p of (data ?? []) as PaymentRow[]) {
+        (map[p.invoice_id] ??= []).push(p);
+      }
+      return map;
+    },
+  });
+}
+
+export function useRecordPayment() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      invoice_id: string;
+      invoice_total: number;
+      amount: number;
+      payment_date: string;
+      reference?: string;
+      notes?: string;
+    }) => {
+      const { data: existing } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("invoice_id", input.invoice_id);
+      const paid = invoiceAmountPaid((existing ?? []) as PaymentRow[]);
+      const balance = Math.max(0, Number(input.invoice_total) - paid);
+      if (input.amount > balance + 0.001) throw new Error(`Amount exceeds balance due (${money(balance)})`);
+
+      const { data: payment, error } = await supabase
+        .from("payments")
+        .insert({
+          invoice_id: input.invoice_id,
+          amount: input.amount,
+          payment_date: input.payment_date,
+          reference: input.reference || null,
+          notes: input.notes || null,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+
+      const status = await syncInvoiceStatus(input.invoice_id, input.invoice_total);
+      if (user) {
+        await supabase.from("activity_log").insert({
+          document_id: input.invoice_id,
+          action: "payment_recorded",
+          description: `${money(input.amount)} received on ${input.payment_date}${status === "paid" ? " — paid in full" : ""}`,
+          performed_by: user.id,
+        });
+      }
+      return payment as PaymentRow;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["payments"] });
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      qc.invalidateQueries({ queryKey: ["document", v.invoice_id] });
+      qc.invalidateQueries({ queryKey: ["activity", v.invoice_id] });
+      toast.success("Payment recorded");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to record payment"),
+  });
+}
+
+export function useUpdatePayment() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      invoice_id: string;
+      invoice_total: number;
+      amount: number;
+      payment_date: string;
+      reference?: string | null;
+      notes?: string | null;
+    }) => {
+      const { data: existing } = await supabase
+        .from("payments")
+        .select("id, amount")
+        .eq("invoice_id", input.invoice_id);
+      const others = ((existing ?? []) as PaymentRow[]).filter((p) => p.id !== input.id);
+      const otherPaid = invoiceAmountPaid(others);
+      const maxAllowed = Number(input.invoice_total) - otherPaid;
+      if (input.amount > maxAllowed + 0.001) throw new Error(`Amount exceeds balance due (${money(maxAllowed)})`);
+
+      const { error } = await supabase
+        .from("payments")
+        .update({
+          amount: input.amount,
+          payment_date: input.payment_date,
+          reference: input.reference ?? null,
+          notes: input.notes ?? null,
+        })
+        .eq("id", input.id);
+      if (error) throw error;
+
+      await syncInvoiceStatus(input.invoice_id, input.invoice_total);
+      if (user) {
+        await supabase.from("activity_log").insert({
+          document_id: input.invoice_id,
+          action: "payment_updated",
+          description: `Payment updated — ${money(input.amount)} on ${input.payment_date}`,
+          performed_by: user.id,
+        });
+      }
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["payments"] });
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      qc.invalidateQueries({ queryKey: ["document", v.invoice_id] });
+      qc.invalidateQueries({ queryKey: ["activity", v.invoice_id] });
+      toast.success("Payment updated");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to update payment"),
+  });
+}
+
+export function useDeletePayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; invoice_id: string; invoice_total: number }) => {
+      const { error } = await supabase.from("payments").delete().eq("id", input.id);
+      if (error) throw error;
+      await syncInvoiceStatus(input.invoice_id, input.invoice_total);
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["payments"] });
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      qc.invalidateQueries({ queryKey: ["document", v.invoice_id] });
+      qc.invalidateQueries({ queryKey: ["activity", v.invoice_id] });
+      toast.success("Payment deleted");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to delete payment"),
+  });
+}
+
+export function useCustomer(customerId: string | undefined) {
+  return useQuery({
+    queryKey: ["customer", customerId],
+    enabled: !!customerId,
+    queryFn: async (): Promise<CustomerRow | null> => {
+      const { data, error } = await supabase.from("customers").select("*").eq("id", customerId!).maybeSingle();
+      if (error) throw error;
+      return data as CustomerRow | null;
+    },
+  });
+}
+
+export function useCustomerStatementData(
+  customerId: string | undefined,
+  from: string,
+  to: string,
+  mode: StatementMode,
+) {
+  return useQuery({
+    queryKey: ["statement", customerId, from, to, mode],
+    enabled: !!customerId && !!from && !!to,
+    queryFn: async () => {
+      const { data: customer, error: cErr } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("id", customerId!)
+        .single();
+      if (cErr) throw cErr;
+
+      const { data: allDocs, error: dErr } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("doc_type", "invoice");
+      if (dErr) throw dErr;
+
+      const invoices = ((allDocs ?? []) as DocumentRow[]).filter((d) =>
+        customerMatchesInvoice(customer as CustomerRow, d),
+      );
+      const invoiceIds = invoices.map((i) => i.id);
+      let payments: PaymentRow[] = [];
+      if (invoiceIds.length) {
+        const { data, error } = await supabase.from("payments").select("*").in("invoice_id", invoiceIds);
+        if (error) throw error;
+        payments = (data ?? []) as PaymentRow[];
+      }
+
+      const paymentsByInvoice: Record<string, PaymentRow[]> = {};
+      for (const p of payments) {
+        (paymentsByInvoice[p.invoice_id] ??= []).push(p);
+      }
+
+      const withBalance = invoices.map((inv) => {
+        const invPayments = paymentsByInvoice[inv.id] ?? [];
+        const paid = invoiceAmountPaid(invPayments);
+        const balance = invoiceBalance(inv, invPayments);
+        return { invoice: inv, payments: invPayments, paid, balance };
+      });
+
+      if (mode === "open") {
+        const open = withBalance.filter(
+          (row) =>
+            row.balance > 0.001 &&
+            row.invoice.doc_date >= from &&
+            row.invoice.doc_date <= to &&
+            !["paid", "cancelled"].includes(row.invoice.status),
+        );
+        return {
+          customer: customer as CustomerRow,
+          mode,
+          from,
+          to,
+          rows: open,
+          totalOutstanding: open.reduce((s, r) => s + r.balance, 0),
+        };
+      }
+
+      // Activity period
+      const inRangeInvoices = withBalance.filter(
+        (r) => r.invoice.doc_date >= from && r.invoice.doc_date <= to,
+      );
+      const inRangePayments = payments.filter((p) => p.payment_date >= from && p.payment_date <= to);
+
+      const beforeInvoices = withBalance.filter((r) => r.invoice.doc_date < from);
+      const beforePayments = payments.filter((p) => p.payment_date < from);
+      const openingBalance =
+        beforeInvoices.reduce((s, r) => s + Number(r.invoice.total), 0) -
+        invoiceAmountPaid(beforePayments);
+
+      type LedgerRow =
+        | { kind: "invoice"; date: string; invoice: DocumentRow; amount: number }
+        | { kind: "payment"; date: string; payment: PaymentRow; invoice: DocumentRow; amount: number };
+
+      const ledger: LedgerRow[] = [
+        ...inRangeInvoices.map((r) => ({
+          kind: "invoice" as const,
+          date: r.invoice.doc_date,
+          invoice: r.invoice,
+          amount: Number(r.invoice.total),
+        })),
+        ...inRangePayments.map((p) => {
+          const inv = invoices.find((i) => i.id === p.invoice_id)!;
+          return {
+            kind: "payment" as const,
+            date: p.payment_date,
+            payment: p,
+            invoice: inv,
+            amount: Number(p.amount),
+          };
+        }),
+      ].sort((a, b) => a.date.localeCompare(b.date) || (a.kind === "payment" ? 1 : -1));
+
+      const periodNet =
+        inRangeInvoices.reduce((s, r) => s + Number(r.invoice.total), 0) -
+        invoiceAmountPaid(inRangePayments);
+      const closingBalance = openingBalance + periodNet;
+
+      return {
+        customer: customer as CustomerRow,
+        mode,
+        from,
+        to,
+        ledger,
+        openingBalance,
+        closingBalance,
+      };
+    },
+  });
 }
 
 export function useCustomers() {
@@ -450,7 +788,8 @@ export function useConvertQuoteToInvoice() {
           tax_rate: quote.tax_rate,
           tax_amount: quote.tax_amount,
           total: quote.total,
-          due_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+          doc_date: quote.doc_date,
+          due_date: dueDateFromDocDate(quote.doc_date),
           created_by: user?.id,
         })
         .select()

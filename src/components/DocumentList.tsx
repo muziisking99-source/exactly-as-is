@@ -1,16 +1,27 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, FileText, Download } from "lucide-react";
 import type { DocType, DocumentRow, LineItem } from "@/lib/queries";
-import { useDocumentsByType, useIsAdmin } from "@/lib/queries";
+import { useDocumentsByType, useIsAdmin, usePaymentsForInvoices, invoiceBalance } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { money, fmtDate, isOverdue } from "@/lib/format";
 import { StatusBadge } from "./StatusBadge";
 import { TabBar } from "./TabBar";
 import { EmptyState } from "./EmptyState";
 import { DeleteDocButton } from "./DeleteDocButton";
+import { TableSkeleton } from "./TableSkeleton";
+import { rowEnterDelay, rowEnterTransition, rowExitTransition } from "@/components/motion";
 import { generatePDF } from "@/lib/pdf";
+
+function useDebouncedValue<T>(value: T, delay = 180): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 interface Props {
   type: DocType;
@@ -23,8 +34,11 @@ interface Props {
 export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props) {
   const { data: docs, isLoading } = useDocumentsByType(type);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const [tab, setTab] = useState("all");
   const isAdmin = useIsAdmin();
+  const invoiceIds = type === "invoice" ? (docs ?? []).map((d) => d.id) : [];
+  const { data: paymentMap = {} } = usePaymentsForInvoices(invoiceIds);
 
   const allTabs = useMemo(
     () => [{ value: "all", label: "All", match: () => true }, ...tabs],
@@ -43,14 +57,14 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
     const currentTab = allTabs.find((t) => t.value === tab)!;
     return withOverdue.filter((d) => {
       if (!currentTab.match(d)) return false;
-      if (!search) return true;
-      const q = search.toLowerCase();
+      if (!debouncedSearch) return true;
+      const q = debouncedSearch.toLowerCase();
       return (
         d.doc_number.toLowerCase().includes(q) ||
         d.customer_name.toLowerCase().includes(q)
       );
     });
-  }, [withOverdue, tab, search, allTabs]);
+  }, [withOverdue, tab, debouncedSearch, allTabs]);
 
   const counts = allTabs.map((t) => ({
     ...t,
@@ -78,14 +92,14 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
         {newHref && (
           <Link
             to={newHref}
-            className="btn-uppercase inline-flex items-center px-4 py-2 bg-royal text-white hover:bg-royal-deep"
+            className="btn-uppercase inline-flex items-center px-4 py-2 bg-royal text-primary-foreground hover:bg-royal-deep"
           >
             + New
           </Link>
         )}
       </div>
 
-      <div className="bg-card border border-border rounded-md">
+      <div className="glass-card overflow-hidden">
         <div className="p-4 border-b border-border">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-navy" />
@@ -93,7 +107,7 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by number or customer…"
-              className="w-full pl-9 pr-3 py-2 text-sm bg-secondary/50 rounded border border-transparent focus:border-royal focus:bg-white outline-none"
+              className="w-full pl-9 pr-3 py-2 text-sm bg-secondary/50 rounded-lg border border-transparent focus:border-royal focus:bg-card outline-none transition-colors duration-150"
             />
           </div>
           <div className="mt-3">
@@ -102,7 +116,7 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-navy">Loading…</div>
+          <TableSkeleton rows={8} className="py-2" />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<FileText className="w-10 h-10" />}
@@ -111,7 +125,6 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
           />
         ) : (
           <>
-            {/* Desktop table */}
             <table className="hidden md:table w-full">
               <thead>
                 <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
@@ -120,18 +133,24 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Total</th>
+                  {type === "invoice" && <th className="px-4 py-3 text-right">Balance</th>}
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <AnimatePresence initial={false}>
-                  {filtered.map((d) => (
+                  {filtered.map((d, i) => (
                     <motion.tr
                       key={d.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="border-b border-border/60 hover:bg-secondary/40"
+                      initial={{ opacity: 1, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 1, x: 14 }}
+                      transition={{
+                        delay: rowEnterDelay(i),
+                        ...rowEnterTransition,
+                      }}
+                      exit={{ opacity: 1, x: 14, transition: rowExitTransition }}
+                      className="border-b border-border/60 hover:bg-secondary/50 transition-colors duration-150"
                     >
                       <td className="px-4 py-3">
                         <Link to={detailRoute(d.id)} className="font-medium text-ink hover:text-royal">
@@ -140,10 +159,17 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
                       </td>
                       <td className="px-4 py-3 text-sm text-ink">{d.customer_name || "—"}</td>
                       <td className="px-4 py-3 text-sm text-muted-navy">{fmtDate(d.doc_date)}</td>
-                      <td className="px-4 py-3"><StatusBadge status={d.status} /></td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={d.status} docId={d.id} />
+                      </td>
                       <td className="px-4 py-3 text-right text-sm">
                         {type === "job_card" ? "—" : money(d.total)}
                       </td>
+                      {type === "invoice" && (
+                        <td className="px-4 py-3 text-right text-sm font-mono">
+                          {money(invoiceBalance(d, paymentMap[d.id] ?? []))}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-right space-x-2">
                         <button
                           onClick={() => downloadPDF(d)}
@@ -160,31 +186,50 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
               </tbody>
             </table>
 
-            {/* Mobile cards */}
             <div className="md:hidden divide-y divide-border">
-              {filtered.map((d) => (
-                <div key={d.id} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <Link to={detailRoute(d.id)} className="font-medium text-ink">
-                      {d.doc_number}
-                    </Link>
-                    <StatusBadge status={d.status} />
-                  </div>
-                  <div className="text-sm text-ink mt-1">{d.customer_name || "—"}</div>
-                  <div className="flex items-center justify-between mt-2 text-xs text-muted-navy">
-                    <span>{fmtDate(d.doc_date)}</span>
-                    {type !== "job_card" && <span className="text-ink font-medium">{money(d.total)}</span>}
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => downloadPDF(d)}
-                      className="btn-uppercase px-3 py-1.5 border border-border text-muted-navy"
-                    >
-                      PDF
-                    </button>
-                  </div>
-                </div>
-              ))}
+              <AnimatePresence initial={false}>
+                {filtered.map((d, i) => (
+                  <motion.div
+                    key={d.id}
+                    initial={{ opacity: 1, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 1, x: 14 }}
+                    transition={{
+                      delay: rowEnterDelay(i),
+                      ...rowEnterTransition,
+                    }}
+                    exit={{ opacity: 1, x: 14, transition: rowExitTransition }}
+                    className="p-4"
+                  >
+                    <div className="flex items-start justify-between">
+                      <Link to={detailRoute(d.id)} className="font-medium text-ink">
+                        {d.doc_number}
+                      </Link>
+                      <StatusBadge status={d.status} docId={d.id} />
+                    </div>
+                    <div className="text-sm text-ink mt-1">{d.customer_name || "—"}</div>
+                    <div className="flex items-center justify-between mt-2 text-xs text-muted-navy">
+                      <span>{fmtDate(d.doc_date)}</span>
+                      {type !== "job_card" && (
+                        <span className="text-ink font-medium">
+                          {type === "invoice"
+                            ? money(invoiceBalance(d, paymentMap[d.id] ?? []))
+                            : money(d.total)}
+                          {type === "invoice" && " bal."}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => downloadPDF(d)}
+                        className="btn-uppercase px-3 py-1.5 border border-border text-muted-navy"
+                      >
+                        PDF
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </>
         )}

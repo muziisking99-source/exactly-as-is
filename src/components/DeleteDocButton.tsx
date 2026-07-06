@@ -31,7 +31,7 @@ export function DeleteDocButton({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <button className="inline-flex items-center gap-2 px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] font-semibold text-danger border border-danger/30 rounded hover:bg-red-50">
+        <button className="inline-flex items-center gap-2 px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] font-semibold text-danger border border-danger/30 rounded-lg hover:bg-danger/10 transition-colors">
           <Trash2 className="w-3.5 h-3.5" /> {label}
         </button>
       </AlertDialogTrigger>
