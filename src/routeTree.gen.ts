@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as QuotesRouteImport } from './routes/quotes'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as InvoicesRouteImport } from './routes/invoices'
@@ -23,6 +24,11 @@ import { Route as QuotesIdRouteImport } from './routes/quotes.$id'
 import { Route as InvoicesIdRouteImport } from './routes/invoices.$id'
 import { Route as DeliveryIdRouteImport } from './routes/delivery.$id'
 
+const TrackerRoute = TrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuotesRoute = QuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof InvoicesRouteWithChildren
   '/jobs': typeof JobsRoute
   '/quotes': typeof QuotesRouteWithChildren
+  '/tracker': typeof TrackerRoute
   '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
   '/quotes/$id': typeof QuotesIdRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/jobs': typeof JobsRoute
+  '/tracker': typeof TrackerRoute
   '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
   '/quotes/$id': typeof QuotesIdRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/invoices': typeof InvoicesRouteWithChildren
   '/jobs': typeof JobsRoute
   '/quotes': typeof QuotesRouteWithChildren
+  '/tracker': typeof TrackerRoute
   '/delivery/$id': typeof DeliveryIdRoute
   '/invoices/$id': typeof InvoicesIdRoute
   '/quotes/$id': typeof QuotesIdRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/jobs'
     | '/quotes'
+    | '/tracker'
     | '/delivery/$id'
     | '/invoices/$id'
     | '/quotes/$id'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/jobs'
+    | '/tracker'
     | '/delivery/$id'
     | '/invoices/$id'
     | '/quotes/$id'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/jobs'
     | '/quotes'
+    | '/tracker'
     | '/delivery/$id'
     | '/invoices/$id'
     | '/quotes/$id'
@@ -184,10 +196,18 @@ export interface RootRouteChildren {
   InvoicesRoute: typeof InvoicesRouteWithChildren
   JobsRoute: typeof JobsRoute
   QuotesRoute: typeof QuotesRouteWithChildren
+  TrackerRoute: typeof TrackerRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tracker': {
+      id: '/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof TrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quotes': {
       id: '/quotes'
       path: '/quotes'
@@ -332,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoicesRoute: InvoicesRouteWithChildren,
   JobsRoute: JobsRoute,
   QuotesRoute: QuotesRouteWithChildren,
+  TrackerRoute: TrackerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

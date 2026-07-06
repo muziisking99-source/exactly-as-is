@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { useDocuments, useProfile } from "@/lib/queries";
 import {
