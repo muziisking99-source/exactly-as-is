@@ -13,6 +13,7 @@ import { Route as QuotesRouteImport } from './routes/quotes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as QuotesIndexRouteImport } from './routes/quotes.index'
+import { Route as QuotesNewRouteImport } from './routes/quotes.new'
 
 const QuotesRoute = QuotesRouteImport.update({
   id: '/quotes',
@@ -34,16 +35,23 @@ const QuotesIndexRoute = QuotesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => QuotesRoute,
 } as any)
+const QuotesNewRoute = QuotesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => QuotesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/quotes': typeof QuotesRouteWithChildren
+  '/quotes/new': typeof QuotesNewRoute
   '/quotes/': typeof QuotesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/quotes/new': typeof QuotesNewRoute
   '/quotes': typeof QuotesIndexRoute
 }
 export interface FileRoutesById {
@@ -51,14 +59,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/quotes': typeof QuotesRouteWithChildren
+  '/quotes/new': typeof QuotesNewRoute
   '/quotes/': typeof QuotesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/quotes' | '/quotes/'
+  fullPaths: '/' | '/auth' | '/quotes' | '/quotes/new' | '/quotes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/quotes'
-  id: '__root__' | '/' | '/auth' | '/quotes' | '/quotes/'
+  to: '/' | '/auth' | '/quotes/new' | '/quotes'
+  id: '__root__' | '/' | '/auth' | '/quotes' | '/quotes/new' | '/quotes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,14 +106,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuotesIndexRouteImport
       parentRoute: typeof QuotesRoute
     }
+    '/quotes/new': {
+      id: '/quotes/new'
+      path: '/new'
+      fullPath: '/quotes/new'
+      preLoaderRoute: typeof QuotesNewRouteImport
+      parentRoute: typeof QuotesRoute
+    }
   }
 }
 
 interface QuotesRouteChildren {
+  QuotesNewRoute: typeof QuotesNewRoute
   QuotesIndexRoute: typeof QuotesIndexRoute
 }
 
 const QuotesRouteChildren: QuotesRouteChildren = {
+  QuotesNewRoute: QuotesNewRoute,
   QuotesIndexRoute: QuotesIndexRoute,
 }
 
