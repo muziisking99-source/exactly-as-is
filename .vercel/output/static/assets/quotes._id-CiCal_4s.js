@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-CaR_m4Xc.js";import{i as t}from"./index-BPAUr4nQ.js";import{t as n}from"./DocumentDetail-CZ2nY40Y.js";var r=e();function i(){let{id:e}=t.useParams();return(0,r.jsx)(n,{id:e,type:`quote`,listRoute:`/quotes`,listLabel:`Quotations`})}export{i as component};
