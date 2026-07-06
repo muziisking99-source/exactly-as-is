@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as QuotesRouteImport } from './routes/quotes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as QuotesIndexRouteImport } from './routes/quotes.index'
 
 const QuotesRoute = QuotesRouteImport.update({
   id: '/quotes',
@@ -28,35 +29,42 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuotesIndexRoute = QuotesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => QuotesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/quotes': typeof QuotesRoute
+  '/quotes': typeof QuotesRouteWithChildren
+  '/quotes/': typeof QuotesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/quotes': typeof QuotesRoute
+  '/quotes': typeof QuotesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/quotes': typeof QuotesRoute
+  '/quotes': typeof QuotesRouteWithChildren
+  '/quotes/': typeof QuotesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/quotes'
+  fullPaths: '/' | '/auth' | '/quotes' | '/quotes/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/auth' | '/quotes'
-  id: '__root__' | '/' | '/auth' | '/quotes'
+  id: '__root__' | '/' | '/auth' | '/quotes' | '/quotes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  QuotesRoute: typeof QuotesRoute
+  QuotesRoute: typeof QuotesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +90,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quotes/': {
+      id: '/quotes/'
+      path: '/'
+      fullPath: '/quotes/'
+      preLoaderRoute: typeof QuotesIndexRouteImport
+      parentRoute: typeof QuotesRoute
+    }
   }
 }
+
+interface QuotesRouteChildren {
+  QuotesIndexRoute: typeof QuotesIndexRoute
+}
+
+const QuotesRouteChildren: QuotesRouteChildren = {
+  QuotesIndexRoute: QuotesIndexRoute,
+}
+
+const QuotesRouteWithChildren =
+  QuotesRoute._addFileChildren(QuotesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  QuotesRoute: QuotesRoute,
+  QuotesRoute: QuotesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
