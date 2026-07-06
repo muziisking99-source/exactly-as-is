@@ -53,11 +53,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
     );
   }
-    if (typeof window !== "undefined" && pathname !== "/auth") {
-      navigate({ to: "/auth" });
-    }
-    return <>{children}</>;
-  }
 
   const countOf = (key: string) => (docs ?? []).filter((d) => d.doc_type === key).length;
 
