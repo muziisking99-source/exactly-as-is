@@ -32,6 +32,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    if (!loading && !user && pathname !== "/auth") {
+      navigate({ to: "/auth" });
+    }
+  }, [loading, user, pathname, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen grid place-items-center bg-offwhite">
@@ -41,6 +47,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-offwhite">
+        <div className="text-muted-navy text-sm">Redirecting…</div>
+      </div>
+    );
+  }
     if (typeof window !== "undefined" && pathname !== "/auth") {
       navigate({ to: "/auth" });
     }
