@@ -122,7 +122,8 @@ export function DocumentDetail({ id, type, listRoute, listLabel, actions }: Prop
           <p className="text-sm text-muted-navy mt-1">{label} · {fmtDate(doc.doc_date)}</p>
           {type === "invoice" && doc.customer_id && (
             <Link
-              to={`/customers/${doc.customer_id}/statement`}
+              to="/customers/$id/statement"
+              params={{ id: doc.customer_id }}
               className="text-xs text-royal hover:underline mt-1 inline-block"
             >
               Customer statement →

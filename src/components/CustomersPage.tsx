@@ -119,7 +119,8 @@ export function CustomersPage() {
                   <td className="px-4 py-3 text-sm text-muted-navy">{c.vat_number || "—"}</td>
                   <td className="px-4 py-3 text-right space-x-2">
                     <Link
-                      to={`/customers/${c.id}/statement`}
+                      to="/customers/$id/statement"
+                      params={{ id: c.id }}
                       className="text-muted-navy hover:text-royal inline-block"
                       title="Statement"
                     >
