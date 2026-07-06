@@ -5,11 +5,38 @@ import { useAuth } from "./auth";
 
 export type DocType = "quote" | "invoice" | "delivery_note" | "job_card";
 
+export interface CustomerRow {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  billing_address: string | null;
+  vat_number: string | null;
+  contact_person: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductRow {
+  id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  unit: string | null;
+  sku: string | null;
+  category: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DocumentRow {
   id: string;
   doc_type: DocType;
   doc_number: string;
   parent_id: string | null;
+  customer_id: string | null;
   customer_name: string;
   customer_email: string | null;
   customer_phone: string | null;
@@ -31,11 +58,19 @@ export interface DocumentRow {
 export interface LineItem {
   id: string;
   document_id: string;
+  product_id: string | null;
   description: string;
   quantity: number;
   unit_price: number;
   total_price: number;
   sort_order: number;
+}
+
+export interface FormLineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  product_id?: string | null;
 }
 
 export interface JobTask {
@@ -160,19 +195,151 @@ export function useIsAdmin() {
 }
 
 export function useCustomers() {
-  const { data } = useDocuments();
-  const seen = new Map<string, { name: string; email: string | null; phone: string | null; address: string | null }>();
-  (data ?? []).forEach((d) => {
-    if (d.customer_name && !seen.has(d.customer_name)) {
-      seen.set(d.customer_name, {
-        name: d.customer_name,
-        email: d.customer_email,
-        phone: d.customer_phone,
-        address: d.customer_address,
-      });
-    }
+  return useQuery({
+    queryKey: ["customers"],
+    queryFn: async (): Promise<CustomerRow[]> => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as any;
+    },
   });
-  return Array.from(seen.values());
+}
+
+export function useCreateCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      name: string;
+      email?: string | null;
+      phone?: string | null;
+      billing_address?: string | null;
+      vat_number?: string | null;
+      contact_person?: string | null;
+      notes?: string | null;
+    }) => {
+      const { data, error } = await supabase.from("customers").insert(input).select().single();
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Customer saved");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to save customer"),
+  });
+}
+
+export function useUpdateCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<CustomerRow> & { id: string }) => {
+      const { error } = await supabase.from("customers").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Customer updated");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to update customer"),
+  });
+}
+
+export function useDeleteCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("customers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Customer deleted");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to delete customer"),
+  });
+}
+
+export function useProducts() {
+  return useQuery({
+    queryKey: ["products", "active"],
+    queryFn: async (): Promise<ProductRow[]> => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as any;
+    },
+  });
+}
+
+export function useAllProducts() {
+  return useQuery({
+    queryKey: ["products"],
+    queryFn: async (): Promise<ProductRow[]> => {
+      const { data, error } = await supabase.from("products").select("*").order("name");
+      if (error) throw error;
+      return (data ?? []) as any;
+    },
+  });
+}
+
+export function useCreateProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      name: string;
+      description?: string | null;
+      unit_price: number;
+      unit?: string | null;
+      sku?: string | null;
+      category?: string | null;
+      active?: boolean;
+    }) => {
+      const { data, error } = await supabase.from("products").insert(input).select().single();
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product created");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to create product"),
+  });
+}
+
+export function useUpdateProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<ProductRow> & { id: string }) => {
+      const { error } = await supabase.from("products").update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product updated");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to update product"),
+  });
+}
+
+export function useDeleteProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product deleted");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to delete product"),
+  });
 }
 
 // -------- Mutations --------
@@ -272,6 +439,7 @@ export function useConvertQuoteToInvoice() {
           doc_type: "invoice",
           doc_number,
           parent_id: quote.id,
+          customer_id: quote.customer_id,
           customer_name: quote.customer_name,
           customer_email: quote.customer_email,
           customer_phone: quote.customer_phone,
@@ -293,6 +461,7 @@ export function useConvertQuoteToInvoice() {
         await supabase.from("line_items").insert(
           items.map((it: any) => ({
             document_id: (inv as any).id,
+            product_id: it.product_id,
             description: it.description,
             quantity: it.quantity,
             unit_price: it.unit_price,
@@ -351,6 +520,7 @@ export function useCreateDeliveryNote() {
         await supabase.from("line_items").insert(
           items.map((it: any) => ({
             document_id: (dn as any).id,
+            product_id: it.product_id,
             description: it.description,
             quantity: it.quantity,
             unit_price: it.unit_price,
@@ -420,6 +590,7 @@ export function useCreateJobCard() {
 }
 
 export interface QuoteFormInput {
+  customer_id?: string | null;
   customer_name: string;
   customer_email?: string;
   customer_phone?: string;
@@ -429,7 +600,21 @@ export interface QuoteFormInput {
   tax_rate: number;
   status: "draft" | "sent";
   doc_date: string;
-  items: { description: string; quantity: number; unit_price: number }[];
+  items: FormLineItem[];
+}
+
+export interface InvoiceFormInput {
+  customer_id?: string | null;
+  customer_name: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  project_description?: string;
+  notes?: string;
+  tax_rate: number;
+  doc_date: string;
+  due_date: string;
+  items: FormLineItem[];
 }
 
 export function useCreateQuote() {
@@ -446,6 +631,7 @@ export function useCreateQuote() {
         .insert({
           doc_type: "quote",
           doc_number,
+          customer_id: input.customer_id || null,
           customer_name: input.customer_name,
           customer_email: input.customer_email || null,
           customer_phone: input.customer_phone || null,
@@ -467,6 +653,7 @@ export function useCreateQuote() {
         await supabase.from("line_items").insert(
           input.items.map((it, i) => ({
             document_id: (doc as any).id,
+            product_id: it.product_id || null,
             description: it.description,
             quantity: it.quantity,
             unit_price: it.unit_price,
@@ -480,6 +667,71 @@ export function useCreateQuote() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents"] });
       toast.success("Quote created");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed"),
+  });
+}
+
+export function useCreateInvoice() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (input: InvoiceFormInput) => {
+      const subtotal = input.items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+      const tax_amount = subtotal * (input.tax_rate / 100);
+      const total = subtotal + tax_amount;
+      const doc_number = await nextDocNumber("invoice");
+      const { data: doc, error } = await supabase
+        .from("documents")
+        .insert({
+          doc_type: "invoice",
+          doc_number,
+          parent_id: null,
+          customer_id: input.customer_id || null,
+          customer_name: input.customer_name,
+          customer_email: input.customer_email || null,
+          customer_phone: input.customer_phone || null,
+          customer_address: input.customer_address || null,
+          project_description: input.project_description || null,
+          notes: input.notes || null,
+          status: "unpaid",
+          doc_date: input.doc_date,
+          due_date: input.due_date,
+          subtotal,
+          tax_rate: input.tax_rate,
+          tax_amount,
+          total,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      if (input.items.length) {
+        await supabase.from("line_items").insert(
+          input.items.map((it, i) => ({
+            document_id: (doc as any).id,
+            product_id: it.product_id || null,
+            description: it.description,
+            quantity: it.quantity,
+            unit_price: it.unit_price,
+            total_price: it.quantity * it.unit_price,
+            sort_order: i,
+          })),
+        );
+      }
+      if (user) {
+        await supabase.from("activity_log").insert({
+          document_id: (doc as any).id,
+          action: "created",
+          description: `Invoice ${doc_number} created`,
+          performed_by: user.id,
+        });
+      }
+      return doc as any;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Invoice created");
     },
     onError: (e: any) => toast.error(e.message ?? "Failed"),
   });

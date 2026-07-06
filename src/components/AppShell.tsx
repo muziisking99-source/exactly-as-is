@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   LogOut,
+  Package,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,8 @@ const NAV = [
   { to: "/invoices", label: "Invoices", icon: Receipt, key: "invoice" },
   { to: "/delivery", label: "Delivery", icon: Truck, key: "delivery_note" },
   { to: "/jobs", label: "Job Cards", icon: ClipboardList, key: "job_card" },
+  { to: "/products", label: "Products", icon: Package, key: "products" },
+  { to: "/customers", label: "Customers", icon: Users, key: "customers" },
   { to: "/tracker", label: "Order Tracker", icon: RouteIcon, key: "tracker" },
 ] as const;
 
@@ -66,7 +70,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         {NAV.map((n) => {
           const Icon = n.icon;
           const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
-          const count = n.key === "dash" || n.key === "tracker" ? null : countOf(n.key);
+          const count = n.key === "dash" || n.key === "tracker" || n.key === "products" || n.key === "customers"
+            ? null
+            : countOf(n.key);
           return (
             <Link
               key={n.to}

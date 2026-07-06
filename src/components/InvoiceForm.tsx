@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useCreateQuote, type QuoteFormInput } from "@/lib/queries";
+import { useCreateInvoice, type InvoiceFormInput } from "@/lib/queries";
 import { CustomerFields } from "@/components/CustomerFields";
 import { LineItemGrid, emptyLineItem } from "@/components/LineItemGrid";
 
-export function QuoteForm() {
+const defaultDueDate = () =>
+  new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+
+export function InvoiceForm() {
   const nav = useNavigate();
-  const create = useCreateQuote();
-  const [form, setForm] = useState<QuoteFormInput>({
+  const create = useCreateInvoice();
+  const [form, setForm] = useState<InvoiceFormInput>({
     customer_id: null,
     customer_name: "",
     customer_email: "",
@@ -16,40 +19,46 @@ export function QuoteForm() {
     project_description: "",
     notes: "",
     tax_rate: 15,
-    status: "draft",
     doc_date: new Date().toISOString().slice(0, 10),
+    due_date: defaultDueDate(),
     items: [emptyLineItem()],
   });
 
-  const update = (patch: Partial<QuoteFormInput>) => setForm((f) => ({ ...f, ...patch }));
+  const update = (patch: Partial<InvoiceFormInput>) => setForm((f) => ({ ...f, ...patch }));
 
-  async function submit(status: "draft" | "sent") {
+  async function submit() {
     if (!form.customer_name.trim()) return;
-    const doc = await create.mutateAsync({ ...form, status });
-    if (doc?.id) nav({ to: `/quotes/${doc.id}` });
+    const doc = await create.mutateAsync(form);
+    if (doc?.id) nav({ to: `/invoices/${doc.id}` });
   }
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="page-title">New Quote</h1>
-        <p className="text-sm text-muted-navy mt-1">Fill in the details and add line items.</p>
+        <h1 className="page-title">New Invoice</h1>
+        <p className="text-sm text-muted-navy mt-1">Create an invoice directly — no quote required.</p>
       </div>
 
-      <CustomerFields
-        value={form}
-        onChange={(patch) => update(patch)}
-      />
+      <CustomerFields value={form} onChange={(patch) => update(patch)} />
 
       <section className="bg-card border border-border rounded-md p-4 md:p-6 space-y-4">
         <h2 className="text-[11px] uppercase tracking-[0.14em] text-muted-navy">Dates</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-muted-navy">Quote date</label>
+            <label className="text-xs text-muted-navy">Invoice date</label>
             <input
               type="date"
               value={form.doc_date}
               onChange={(e) => update({ doc_date: e.target.value })}
+              className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-navy">Due date</label>
+            <input
+              type="date"
+              value={form.due_date}
+              onChange={(e) => update({ due_date: e.target.value })}
               className="mt-1 w-full px-3 py-2 border border-border rounded bg-white focus:border-royal outline-none"
             />
           </div>
@@ -77,19 +86,11 @@ export function QuoteForm() {
       <div className="flex flex-wrap gap-2 justify-end">
         <button
           type="button"
-          onClick={() => submit("draft")}
-          disabled={create.isPending}
-          className="btn-uppercase px-4 py-2 border border-border bg-white text-ink hover:bg-secondary"
-        >
-          Save as Draft
-        </button>
-        <button
-          type="button"
-          onClick={() => submit("sent")}
+          onClick={submit}
           disabled={create.isPending}
           className="btn-uppercase px-4 py-2 bg-royal text-white hover:bg-royal-deep"
         >
-          Save & Send
+          Create Invoice
         </button>
       </div>
     </div>

@@ -9,6 +9,7 @@ function Page() {
     <DocumentList
       type="invoice"
       title="Invoices"
+      newHref="/invoices/new"
       detailRoute={(id) => `/invoices/${id}`}
       tabs={[
         {

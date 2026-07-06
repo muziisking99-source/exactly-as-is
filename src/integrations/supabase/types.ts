@@ -49,12 +49,52 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          billing_address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          billing_address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          billing_address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
           created_by: string | null
           customer_address: string | null
           customer_email: string | null
+          customer_id: string | null
           customer_name: string
           customer_phone: string | null
           doc_date: string
@@ -77,6 +117,7 @@ export type Database = {
           created_by?: string | null
           customer_address?: string | null
           customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string | null
           doc_date?: string
@@ -99,6 +140,7 @@ export type Database = {
           created_by?: string | null
           customer_address?: string | null
           customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string | null
           doc_date?: string
@@ -117,6 +159,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_parent_id_fkey"
             columns: ["parent_id"]
@@ -169,6 +218,7 @@ export type Database = {
           description: string
           document_id: string
           id: string
+          product_id: string | null
           quantity: number
           sort_order: number
           total_price: number
@@ -178,6 +228,7 @@ export type Database = {
           description?: string
           document_id: string
           id?: string
+          product_id?: string | null
           quantity?: number
           sort_order?: number
           total_price?: number
@@ -187,6 +238,7 @@ export type Database = {
           description?: string
           document_id?: string
           id?: string
+          product_id?: string | null
           quantity?: number
           sort_order?: number
           total_price?: number
@@ -200,7 +252,53 @@ export type Database = {
             referencedRelation: "documents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "line_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sku: string | null
+          unit: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sku?: string | null
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sku?: string | null
+          unit?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
