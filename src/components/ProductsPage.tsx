@@ -101,43 +101,80 @@ export function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-navy">No products yet.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3 text-right">Unit price</th>
-                <th className="px-4 py-3">Unit</th>
-                <th className="px-4 py-3 text-center">Active</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <table className="hidden md:table w-full">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3 text-right">Unit price</th>
+                  <th className="px-4 py-3">Unit</th>
+                  <th className="px-4 py-3 text-center">Active</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.id} className="border-b border-border/60 hover:bg-secondary/40">
+                    <td className="px-4 py-3 text-sm font-medium text-ink">{p.name}</td>
+                    <td className="px-4 py-3 text-sm text-muted-navy">{p.category || "—"}</td>
+                    <td className="px-4 py-3 text-sm text-right">{money(p.unit_price)}</td>
+                    <td className="px-4 py-3 text-sm text-muted-navy">{p.unit || "—"}</td>
+                    <td className="px-4 py-3 text-center">
+                      <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
+                    </td>
+                    <td className="px-4 py-3 text-right space-x-2">
+                      <button type="button" onClick={() => openEdit(p)} className="text-muted-navy hover:text-royal">
+                        <Pencil className="w-4 h-4 inline" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove.mutate(p.id)}
+                        className="text-muted-navy hover:text-danger"
+                      >
+                        <Trash2 className="w-4 h-4 inline" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="md:hidden divide-y divide-border">
               {products.map((p) => (
-                <tr key={p.id} className="border-b border-border/60 hover:bg-secondary/40">
-                  <td className="px-4 py-3 text-sm font-medium text-ink">{p.name}</td>
-                  <td className="px-4 py-3 text-sm text-muted-navy">{p.category || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-right">{money(p.unit_price)}</td>
-                  <td className="px-4 py-3 text-sm text-muted-navy">{p.unit || "—"}</td>
-                  <td className="px-4 py-3 text-center">
+                <div key={p.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-ink">{p.name}</div>
+                      {p.sku && <div className="text-xs text-muted-navy mt-0.5">SKU: {p.sku}</div>}
+                    </div>
                     <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
-                  </td>
-                  <td className="px-4 py-3 text-right space-x-2">
-                    <button type="button" onClick={() => openEdit(p)} className="text-muted-navy hover:text-royal">
-                      <Pencil className="w-4 h-4 inline" />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-navy">
+                    {p.category && <span>{p.category}</span>}
+                    <span className="font-medium text-ink">{money(p.unit_price)}</span>
+                    {p.unit && <span>/ {p.unit}</span>}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(p)}
+                      className="btn-uppercase px-3 py-1.5 border border-border text-muted-navy inline-flex items-center gap-1"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => remove.mutate(p.id)}
-                      className="text-muted-navy hover:text-danger"
+                      className="btn-uppercase px-3 py-1.5 border border-border text-danger inline-flex items-center gap-1"
                     >
-                      <Trash2 className="w-4 h-4 inline" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -164,7 +201,7 @@ export function ProductsPage() {
                 className="mt-1 input-field"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-muted-navy">Unit price</label>
                 <input
@@ -186,7 +223,7 @@ export function ProductsPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-muted-navy">SKU</label>
                 <input

@@ -71,31 +71,31 @@ export function CustomerStatement({ customerId }: Props) {
       </div>
 
       <div className="glass-card p-4 space-y-4">
-        <div className="flex flex-wrap gap-4 items-end">
-          <div>
+        <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:items-end">
+          <div className="w-full sm:w-auto">
             <label className="text-xs text-muted-navy">From</label>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="mt-1 input-field"
+              className="mt-1 input-field w-full"
             />
           </div>
-          <div>
+          <div className="w-full sm:w-auto">
             <label className="text-xs text-muted-navy">To</label>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="mt-1 input-field"
+              className="mt-1 input-field w-full"
             />
           </div>
-          <div>
+          <div className="w-full sm:w-auto sm:min-w-[200px]">
             <label className="text-xs text-muted-navy">Mode</label>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value as StatementMode)}
-              className="mt-1 input-field"
+              className="mt-1 input-field w-full"
             >
               <option value="open">Open invoices (by invoice date)</option>
               <option value="activity">Activity period</option>
@@ -116,7 +116,7 @@ export function CustomerStatement({ customerId }: Props) {
             </div>
           ) : (
             <>
-              <table className="w-full">
+              <table className="hidden md:table w-full">
                 <thead>
                   <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
                     <th className="px-4 py-3">Invoice</th>
@@ -132,7 +132,8 @@ export function CustomerStatement({ customerId }: Props) {
                     <tr key={row.invoice.id} className="border-b border-border/60">
                       <td className="px-4 py-3">
                         <Link
-                          to={`/invoices/${row.invoice.id}`}
+                          to="/invoices/$id"
+                          params={{ id: row.invoice.id }}
                           className="text-sm font-medium text-ink hover:text-royal"
                         >
                           {row.invoice.doc_number}
@@ -147,6 +148,32 @@ export function CustomerStatement({ customerId }: Props) {
                   ))}
                 </tbody>
               </table>
+
+              <div className="md:hidden divide-y divide-border">
+                {data.rows.map((row) => (
+                  <div key={row.invoice.id} className="p-4">
+                    <Link
+                      to="/invoices/$id"
+                      params={{ id: row.invoice.id }}
+                      className="font-medium text-ink hover:text-royal"
+                    >
+                      {row.invoice.doc_number}
+                    </Link>
+                    <div className="mt-1 text-xs text-muted-navy">
+                      {fmtDate(row.invoice.doc_date)} · Due {fmtDate(row.invoice.due_date)}
+                    </div>
+                    <div className="mt-2 flex justify-between text-sm">
+                      <span className="text-muted-navy">Balance</span>
+                      <span className="font-mono font-medium">{money(row.balance)}</span>
+                    </div>
+                    <div className="mt-1 flex justify-between text-xs text-muted-navy">
+                      <span>Total {money(row.invoice.total)}</span>
+                      <span className="text-eco">Paid {money(row.paid)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="p-4 border-t border-border flex justify-between text-sm font-medium">
                 <span className="text-muted-navy uppercase tracking-[0.1em] text-[10px]">
                   Total outstanding
@@ -165,40 +192,79 @@ export function CustomerStatement({ customerId }: Props) {
           {data.ledger.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-navy">No activity in this period.</div>
           ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Type</th>
-                  <th className="px-4 py-3">Reference</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              <table className="hidden md:table w-full">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.ledger.map((row, i) => (
+                    <tr key={`${row.kind}-${row.date}-${i}`} className="border-b border-border/60">
+                      <td className="px-4 py-3 text-sm">{fmtDate(row.date)}</td>
+                      <td className="px-4 py-3 text-sm capitalize">{row.kind}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {row.kind === "invoice" ? (
+                          <Link
+                            to="/invoices/$id"
+                            params={{ id: row.invoice.id }}
+                            className="hover:text-royal"
+                          >
+                            {row.invoice.doc_number}
+                          </Link>
+                        ) : (
+                          row.payment?.reference || row.invoice.doc_number
+                        )}
+                      </td>
+                      <td
+                        className={`px-4 py-3 text-sm text-right font-mono ${
+                          row.kind === "payment" ? "text-eco" : "text-ink"
+                        }`}
+                      >
+                        {row.kind === "payment" ? `−${money(row.amount)}` : money(row.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="md:hidden divide-y divide-border">
                 {data.ledger.map((row, i) => (
-                  <tr key={`${row.kind}-${row.date}-${i}`} className="border-b border-border/60">
-                    <td className="px-4 py-3 text-sm">{fmtDate(row.date)}</td>
-                    <td className="px-4 py-3 text-sm capitalize">{row.kind}</td>
-                    <td className="px-4 py-3 text-sm">
+                  <div key={`${row.kind}-${row.date}-${i}`} className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-sm capitalize text-ink">{row.kind}</div>
+                        <div className="text-xs text-muted-navy mt-0.5">{fmtDate(row.date)}</div>
+                      </div>
+                      <div
+                        className={`text-sm font-mono font-medium ${
+                          row.kind === "payment" ? "text-eco" : "text-ink"
+                        }`}
+                      >
+                        {row.kind === "payment" ? `−${money(row.amount)}` : money(row.amount)}
+                      </div>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-navy">
                       {row.kind === "invoice" ? (
-                        <Link to={`/invoices/${row.invoice.id}`} className="hover:text-royal">
+                        <Link
+                          to="/invoices/$id"
+                          params={{ id: row.invoice.id }}
+                          className="hover:text-royal"
+                        >
                           {row.invoice.doc_number}
                         </Link>
                       ) : (
                         row.payment?.reference || row.invoice.doc_number
                       )}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-sm text-right font-mono ${
-                        row.kind === "payment" ? "text-eco" : "text-ink"
-                      }`}
-                    >
-                      {row.kind === "payment" ? `−${money(row.amount)}` : money(row.amount)}
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
           <div className="p-4 border-t border-border flex justify-between text-sm font-medium">
             <span className="text-muted-navy uppercase tracking-[0.1em] text-[10px]">

@@ -61,51 +61,78 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
             key={idx}
             className="grid grid-cols-1 md:grid-cols-[120px_1fr_80px_120px_120px_40px] gap-2 items-center bg-secondary/30 md:bg-transparent p-3 md:p-0 rounded"
           >
-            <ProductPicker
-              productId={it.product_id}
-              onSelect={(product) => {
-                if (!product) {
-                  updateItem(idx, { product_id: null });
-                  return;
-                }
-                updateItem(idx, {
-                  product_id: product.id,
-                  description: product.description || product.name,
-                  unit_price: product.unit_price,
-                });
-              }}
-            />
-            <input
-              placeholder="Description"
-              value={it.description}
-              onChange={(e) => updateItem(idx, { description: e.target.value })}
-              className="input-field"
-            />
-            <input
-              type="number"
-              min={0}
-              step="0.5"
-              value={it.quantity}
-              onChange={(e) => updateItem(idx, { quantity: parseFloat(e.target.value) || 0 })}
-              className="input-field text-right"
-            />
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={it.unit_price}
-              onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.target.value) || 0 })}
-              className="input-field text-right"
-            />
-            <div className="text-right text-sm font-medium text-ink">
-              {money(it.quantity * it.unit_price)}
+            <div>
+              <label className="md:hidden text-[10px] uppercase tracking-[0.1em] text-muted-navy mb-1 block">
+                Product
+              </label>
+              <ProductPicker
+                productId={it.product_id}
+                onSelect={(product) => {
+                  if (!product) {
+                    updateItem(idx, { product_id: null });
+                    return;
+                  }
+                  updateItem(idx, {
+                    product_id: product.id,
+                    description: product.description || product.name,
+                    unit_price: product.unit_price,
+                  });
+                }}
+              />
+            </div>
+            <div>
+              <label className="md:hidden text-[10px] uppercase tracking-[0.1em] text-muted-navy mb-1 block">
+                Description
+              </label>
+              <input
+                placeholder="Description"
+                value={it.description}
+                onChange={(e) => updateItem(idx, { description: e.target.value })}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="md:hidden text-[10px] uppercase tracking-[0.1em] text-muted-navy mb-1 block text-right">
+                Qty
+              </label>
+              <input
+                type="number"
+                min={0}
+                step="0.5"
+                value={it.quantity}
+                onChange={(e) => updateItem(idx, { quantity: parseFloat(e.target.value) || 0 })}
+                className="input-field text-right"
+              />
+            </div>
+            <div>
+              <label className="md:hidden text-[10px] uppercase tracking-[0.1em] text-muted-navy mb-1 block text-right">
+                Unit price
+              </label>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={it.unit_price}
+                onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.target.value) || 0 })}
+                className="input-field text-right"
+              />
+            </div>
+            <div>
+              <label className="md:hidden text-[10px] uppercase tracking-[0.1em] text-muted-navy mb-1 block text-right">
+                Total
+              </label>
+              <div className="text-right text-sm font-medium text-ink py-2 md:py-0">
+                {money(it.quantity * it.unit_price)}
+              </div>
             </div>
             <button
               type="button"
               onClick={() => removeItem(idx)}
-              className="text-muted-navy hover:text-danger justify-self-end"
+              className="text-muted-navy hover:text-danger justify-self-end md:justify-self-end flex items-center gap-1"
+              aria-label="Remove line item"
             >
               <Trash2 className="w-4 h-4" />
+              <span className="md:hidden text-[10px] uppercase tracking-[0.1em]">Remove</span>
             </button>
           </div>
         ))}

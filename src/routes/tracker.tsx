@@ -56,18 +56,22 @@ function TrackerPage() {
                 {related.length > 0 && (
                   <ul className="mt-4 border-l-2 border-royal/30 pl-4 space-y-2">
                     {related.map((r) => (
-                      <li key={r.id} className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-secondary grid place-items-center text-muted-navy">
-                          {iconFor(r.doc_type)}
+                      <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-6 h-6 rounded-full bg-secondary grid place-items-center text-muted-navy shrink-0">
+                            {iconFor(r.doc_type)}
+                          </div>
+                          <Link
+                            to={detailRouteFor(r.doc_type, r.id)}
+                            className="text-sm text-ink hover:text-royal truncate"
+                          >
+                            {DOC_LABELS[r.doc_type]} · {r.doc_number}
+                          </Link>
                         </div>
-                        <Link
-                          to={detailRouteFor(r.doc_type, r.id)}
-                          className="text-sm text-ink hover:text-royal"
-                        >
-                          {DOC_LABELS[r.doc_type]} · {r.doc_number}
-                        </Link>
-                        <StatusBadge status={r.status} docId={r.id} />
-                        <span className="text-xs text-muted-navy ml-auto">{fmtDate(r.created_at)}</span>
+                        <div className="flex items-center gap-2 pl-9 sm:pl-0">
+                          <StatusBadge status={r.status} docId={r.id} />
+                          <span className="text-xs text-muted-navy">{fmtDate(r.created_at)}</span>
+                        </div>
                       </li>
                     ))}
                   </ul>

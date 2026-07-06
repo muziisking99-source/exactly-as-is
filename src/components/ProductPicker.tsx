@@ -37,7 +37,7 @@ export function ProductPicker({ productId, onSelect }: Props) {
           <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-[min(16rem,calc(100vw-2rem))] p-0" align="start">
         <Command>
           <CommandInput placeholder="Search products…" />
           <CommandList>

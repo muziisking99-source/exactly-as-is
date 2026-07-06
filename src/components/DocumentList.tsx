@@ -219,13 +219,14 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
                         </span>
                       )}
                     </div>
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         onClick={() => downloadPDF(d)}
                         className="btn-uppercase px-3 py-1.5 border border-border text-muted-navy"
                       >
                         PDF
                       </button>
+                      {isAdmin && <DeleteDocButton id={d.id} label="Del" />}
                     </div>
                   </motion.div>
                 ))}

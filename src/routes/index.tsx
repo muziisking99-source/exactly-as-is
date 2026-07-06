@@ -78,7 +78,7 @@ function Dashboard() {
       </div>
 
       {isAdmin && (
-        <div className="glass-card p-5 md:p-6 flex items-center gap-4 bg-royal text-primary-foreground border-royal hover-lift">
+        <div className="glass-card p-5 md:p-6 flex flex-wrap items-center gap-4 bg-royal text-primary-foreground border-royal hover-lift">
           <TrendingUp className="w-8 h-8 opacity-90" />
           <div className="flex-1">
             <div className="text-[11px] uppercase tracking-[0.14em] text-white/70">
@@ -88,7 +88,7 @@ function Dashboard() {
           </div>
           <Link
             to="/invoices"
-            className="btn-uppercase px-3 py-2 border border-white/30 hover:bg-white/10 text-white"
+            className="btn-uppercase px-3 py-2 border border-white/30 hover:bg-white/10 text-white shrink-0"
           >
             Review
           </Link>

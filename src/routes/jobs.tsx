@@ -94,33 +94,39 @@ function JobRow({
 }) {
   const updateStatus = useUpdateStatus();
   return (
-    <div className="p-4 flex items-center gap-3 flex-wrap">
-      <button onClick={onToggle} className="text-muted-navy hover:text-ink">
-        {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-      </button>
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-ink">{job.doc_number}</div>
-        <div className="text-xs text-muted-navy">
-          {job.customer_name || "—"} · {fmtDate(job.doc_date)} · {doneCount}/{totalCount} tasks
+    <div className="p-4">
+      <div className="flex items-start gap-3">
+        <button onClick={onToggle} className="text-muted-navy hover:text-ink mt-0.5 shrink-0">
+          {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="font-medium text-ink">{job.doc_number}</div>
+            <StatusBadge status={job.status} docId={job.id} />
+          </div>
+          <div className="text-xs text-muted-navy mt-0.5">
+            {job.customer_name || "—"} · {fmtDate(job.doc_date)} · {doneCount}/{totalCount} tasks
+          </div>
         </div>
       </div>
-      <StatusBadge status={job.status} docId={job.id} />
-      <select
-        value={job.status}
-        onChange={(e) => updateStatus.mutate({ id: job.id, status: e.target.value, action: `status_${e.target.value}` })}
-        className="text-xs px-2 py-1 border border-border rounded-lg bg-card text-ink"
-      >
-        <option value="pending">Pending</option>
-        <option value="in_progress">In Progress</option>
-        <option value="completed">Completed</option>
-      </select>
-      <button
-        onClick={() => generatePDF(job, [], [])}
-        className="btn-uppercase px-3 py-1.5 border border-border bg-card text-ink hover:bg-secondary inline-flex items-center gap-1"
-      >
-        <Download className="w-3 h-3" /> PDF
-      </button>
-      <DeleteDocButton id={job.id} label="Del" />
+      <div className="mt-3 flex flex-wrap items-center gap-2 pl-7">
+        <select
+          value={job.status}
+          onChange={(e) => updateStatus.mutate({ id: job.id, status: e.target.value, action: `status_${e.target.value}` })}
+          className="text-xs px-2 py-1.5 border border-border rounded-lg bg-card text-ink flex-1 min-w-[120px]"
+        >
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+        <button
+          onClick={() => generatePDF(job, [], [])}
+          className="btn-uppercase px-3 py-1.5 border border-border bg-card text-ink hover:bg-secondary inline-flex items-center gap-1"
+        >
+          <Download className="w-3 h-3" /> PDF
+        </button>
+        <DeleteDocButton id={job.id} label="Del" />
+      </div>
     </div>
   );
 }
@@ -132,7 +138,7 @@ function TaskPanel({ jobId, tasks }: { jobId: string; tasks: any[] }) {
   const [text, setText] = useState("");
 
   return (
-    <div className="bg-secondary/30 px-8 py-4 space-y-2 border-t border-border">
+    <div className="bg-secondary/30 px-4 md:px-8 py-4 space-y-2 border-t border-border">
       {tasks.length === 0 && <div className="text-xs text-muted-navy">No tasks yet.</div>}
       {tasks.map((t) => (
         <div key={t.id} className="flex items-center gap-3 bg-card rounded-lg p-2 border border-border/60">
@@ -159,7 +165,7 @@ function TaskPanel({ jobId, tasks }: { jobId: string; tasks: any[] }) {
           add.mutate({ job_card_id: jobId, task_description: text.trim() });
           setText("");
         }}
-        className="flex gap-2"
+        className="flex flex-wrap gap-2"
       >
         <input
           value={text}

@@ -98,49 +98,90 @@ export function CustomersPage() {
         ) : customers.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-navy">No customers yet.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Contact</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Phone</th>
-                <th className="px-4 py-3">VAT</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <table className="hidden md:table w-full">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">VAT</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customers.map((c) => (
+                  <tr key={c.id} className="border-b border-border/60 hover:bg-secondary/40">
+                    <td className="px-4 py-3 text-sm font-medium text-ink">{c.name}</td>
+                    <td className="px-4 py-3 text-sm text-muted-navy">{c.contact_person || "—"}</td>
+                    <td className="px-4 py-3 text-sm text-muted-navy">{c.email || "—"}</td>
+                    <td className="px-4 py-3 text-sm text-muted-navy">{c.phone || "—"}</td>
+                    <td className="px-4 py-3 text-sm text-muted-navy">{c.vat_number || "—"}</td>
+                    <td className="px-4 py-3 text-right space-x-2">
+                      <Link
+                        to="/customers/$id/statement"
+                        params={{ id: c.id }}
+                        className="text-muted-navy hover:text-royal inline-block"
+                        title="Statement"
+                      >
+                        <FileText className="w-4 h-4 inline" />
+                      </Link>
+                      <button type="button" onClick={() => openEdit(c)} className="text-muted-navy hover:text-royal">
+                        <Pencil className="w-4 h-4 inline" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove.mutate(c.id)}
+                        className="text-muted-navy hover:text-danger"
+                      >
+                        <Trash2 className="w-4 h-4 inline" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="md:hidden divide-y divide-border">
               {customers.map((c) => (
-                <tr key={c.id} className="border-b border-border/60 hover:bg-secondary/40">
-                  <td className="px-4 py-3 text-sm font-medium text-ink">{c.name}</td>
-                  <td className="px-4 py-3 text-sm text-muted-navy">{c.contact_person || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-muted-navy">{c.email || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-muted-navy">{c.phone || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-muted-navy">{c.vat_number || "—"}</td>
-                  <td className="px-4 py-3 text-right space-x-2">
+                <div key={c.id} className="p-4">
+                  <div className="font-medium text-ink">{c.name}</div>
+                  {c.contact_person && (
+                    <div className="text-sm text-muted-navy mt-0.5">{c.contact_person}</div>
+                  )}
+                  <div className="mt-2 space-y-0.5 text-xs text-muted-navy">
+                    {c.email && <div>{c.email}</div>}
+                    {c.phone && <div>{c.phone}</div>}
+                    {c.vat_number && <div>VAT: {c.vat_number}</div>}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <Link
                       to="/customers/$id/statement"
                       params={{ id: c.id }}
-                      className="text-muted-navy hover:text-royal inline-block"
-                      title="Statement"
+                      className="btn-uppercase px-3 py-1.5 border border-border text-muted-navy inline-flex items-center gap-1"
                     >
-                      <FileText className="w-4 h-4 inline" />
+                      <FileText className="w-3.5 h-3.5" /> Statement
                     </Link>
-                    <button type="button" onClick={() => openEdit(c)} className="text-muted-navy hover:text-royal">
-                      <Pencil className="w-4 h-4 inline" />
+                    <button
+                      type="button"
+                      onClick={() => openEdit(c)}
+                      className="btn-uppercase px-3 py-1.5 border border-border text-muted-navy inline-flex items-center gap-1"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => remove.mutate(c.id)}
-                      className="text-muted-navy hover:text-danger"
+                      className="btn-uppercase px-3 py-1.5 border border-border text-danger inline-flex items-center gap-1"
                     >
-                      <Trash2 className="w-4 h-4 inline" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -158,7 +199,7 @@ export function CustomersPage() {
                 className="mt-1 input-field"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-muted-navy">Email</label>
                 <input
@@ -184,7 +225,7 @@ export function CustomersPage() {
                 className="mt-1 input-field"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-muted-navy">VAT number</label>
                 <input

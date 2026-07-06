@@ -113,9 +113,9 @@ export function DocumentDetail({ id, type, listRoute, listLabel, actions }: Prop
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <Breadcrumbs items={[{ label: listLabel, to: listRoute }, { label: doc.doc_number }]} />
 
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
-        <div>
-          <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="page-title">{doc.doc_number}</h1>
             <StatusBadge status={doc.status} docId={doc.id} />
           </div>
@@ -130,7 +130,7 @@ export function DocumentDetail({ id, type, listRoute, listLabel, actions }: Prop
             </Link>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:justify-end">
           <button
             onClick={() => generatePDF(doc, items)}
             className="btn-uppercase inline-flex items-center gap-2 px-3 py-2 border border-border bg-card text-ink hover:bg-secondary"
@@ -282,53 +282,98 @@ export function DocumentDetail({ id, type, listRoute, listLabel, actions }: Prop
           {payments.length === 0 ? (
             <div className="p-4 text-sm text-muted-navy">No payments recorded yet.</div>
           ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3 text-right">Amount</th>
-                  <th className="px-4 py-3">Reference</th>
-                  <th className="px-4 py-3">Notes</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((p) => (
-                  <tr key={p.id} className="border-b border-border/60">
-                    <td className="px-4 py-3 text-sm">{fmtDate(p.payment_date)}</td>
-                    <td className="px-4 py-3 text-sm text-right font-mono">{money(p.amount)}</td>
-                    <td className="px-4 py-3 text-sm text-muted-navy">{p.reference || "—"}</td>
-                    <td className="px-4 py-3 text-sm text-muted-navy">{p.notes || "—"}</td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => openEditPayment(p)}
-                        className="text-muted-navy hover:text-royal"
-                        title="Edit payment"
-                      >
-                        <Pencil className="w-4 h-4 inline" />
-                      </button>
-                      {isAdmin && (
+            <>
+              <table className="hidden md:table w-full">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-[0.1em] text-muted-navy border-b border-border">
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3 text-right">Amount</th>
+                    <th className="px-4 py-3">Reference</th>
+                    <th className="px-4 py-3">Notes</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((p) => (
+                    <tr key={p.id} className="border-b border-border/60">
+                      <td className="px-4 py-3 text-sm">{fmtDate(p.payment_date)}</td>
+                      <td className="px-4 py-3 text-sm text-right font-mono">{money(p.amount)}</td>
+                      <td className="px-4 py-3 text-sm text-muted-navy">{p.reference || "—"}</td>
+                      <td className="px-4 py-3 text-sm text-muted-navy">{p.notes || "—"}</td>
+                      <td className="px-4 py-3 text-right space-x-2">
                         <button
                           type="button"
-                          onClick={() =>
-                            deletePayment.mutate({
-                              id: p.id,
-                              invoice_id: doc.id,
-                              invoice_total: Number(doc.total),
-                            })
-                          }
-                          className="text-muted-navy hover:text-danger"
-                          title="Delete payment"
+                          onClick={() => openEditPayment(p)}
+                          className="text-muted-navy hover:text-royal"
+                          title="Edit payment"
                         >
-                          <Trash2 className="w-4 h-4 inline" />
+                          <Pencil className="w-4 h-4 inline" />
                         </button>
-                      )}
-                    </td>
-                  </tr>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              deletePayment.mutate({
+                                id: p.id,
+                                invoice_id: doc.id,
+                                invoice_total: Number(doc.total),
+                              })
+                            }
+                            className="text-muted-navy hover:text-danger"
+                            title="Delete payment"
+                          >
+                            <Trash2 className="w-4 h-4 inline" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="md:hidden divide-y divide-border">
+                {payments.map((p) => (
+                  <div key={p.id} className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-mono font-medium text-ink">{money(p.amount)}</div>
+                        <div className="text-xs text-muted-navy mt-0.5">{fmtDate(p.payment_date)}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openEditPayment(p)}
+                          className="btn-uppercase px-2 py-1.5 border border-border text-muted-navy hover:text-royal inline-flex items-center gap-1"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Edit
+                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              deletePayment.mutate({
+                                id: p.id,
+                                invoice_id: doc.id,
+                                invoice_total: Number(doc.total),
+                              })
+                            }
+                            className="btn-uppercase px-2 py-1.5 border border-border text-danger inline-flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Del
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {(p.reference || p.notes) && (
+                      <div className="mt-2 text-xs text-muted-navy space-y-0.5">
+                        {p.reference && <div>Ref: {p.reference}</div>}
+                        {p.notes && <div>{p.notes}</div>}
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
       )}
