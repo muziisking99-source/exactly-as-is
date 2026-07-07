@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { COMPANY, DOC_LABELS, fmtDate, pdfMoney, pdfTotal, INVOICE_PAYMENT_TERMS, dueDateFromDocDate } from "./format";
-import type { CustomerRow, DocumentRow, JobTask, LineItem, PaymentRow, StatementMode } from "./queries";
+import { COMPANY, DOC_LABELS, fmtDate, fmtDateSlash, pdfMoney, pdfTotal, pdfColumnAmount, customerCode, statementNumber, INVOICE_PAYMENT_TERMS, dueDateFromDocDate } from "./format";
+import type { CustomerRow, DocumentRow, JobTask, LineItem, StatementAccountSummary, StatementLedgerRow, AgingBuckets } from "./queries";
 
 const NAVY: [number, number, number] = [27, 42, 74];
 const INK: [number, number, number] = [30, 30, 30];
@@ -10,6 +10,7 @@ const ROW_ALT: [number, number, number] = [245, 247, 250];
 const PAID_GREEN: [number, number, number] = [30, 158, 94];
 
 const TABLE_ROWS = 15;
+const STATEMENT_TABLE_ROWS = 10;
 let logoDataUrl: string | null = null;
 
 async function loadLogo(): Promise<string | null> {
@@ -78,7 +79,7 @@ export async function generatePDF(
 
   // Logo top-left
   if (logo) {
-    pdf.addImage(logo, "PNG", M, 28, 72, 72);
+    pdf.addImage(logo, "PNG", M, 20, 100, 100);
   } else {
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(14);
@@ -186,9 +187,10 @@ export async function generatePDF(
       margin: { left: M, right: M },
     });
   } else {
+    const displayItems = items.filter((it) => it.description?.trim());
     const paddedRows: (string | number)[][] = [];
     for (let i = 0; i < TABLE_ROWS; i++) {
-      const it = items[i];
+      const it = displayItems[i];
       if (it) {
         paddedRows.push([
           i + 1,
@@ -296,29 +298,102 @@ export async function generatePDF(
   pdf.save(`${doc.doc_number}.pdf`);
 }
 
+function drawAccountSummary(
+  pdf: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  summary: StatementAccountSummary,
+) {
+  const rowH = 14;
+  const labelW = 90;
+  const rows: [string, string, boolean?][] = [
+    ["Previous Balance", pdfTotal(summary.previousBalance)],
+    ["Credits", pdfTotal(summary.credits)],
+    ["Debits", pdfTotal(summary.debits)],
+    ["Total Balance Due", pdfTotal(summary.totalBalanceDue), true],
+  ];
+  pdf.setLineWidth(0.5);
+  rows.forEach(([label, value, highlight], i) => {
+    const ry = y + i * rowH;
+    if (highlight) {
+      pdf.setFillColor(...NAVY);
+      pdf.rect(x, ry, w, rowH, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.text(label, x + 4, ry + 9);
+      pdf.text(value, x + w - 4, ry + 9, { align: "right" });
+    } else {
+      pdf.setDrawColor(180);
+      pdf.rect(x, ry, w, rowH);
+      pdf.line(x + labelW, ry, x + labelW, ry + rowH);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(...MUTED);
+      pdf.text(label, x + 4, ry + 9);
+      pdf.setTextColor(...INK);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(value, x + w - 4, ry + 9, { align: "right" });
+    }
+  });
+}
+
+function drawAgingTable(
+  pdf: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  aging: AgingBuckets,
+  totalDue: number,
+) {
+  const headers = ["120 Days+", "90 Days", "60 Days", "30 Days", "Current"];
+  const values = [aging.days120Plus, aging.days90, aging.days60, aging.days30, aging.current];
+  const colW = (w - 80) / 5;
+  const rowH = 16;
+  const headerH = 14;
+
+  pdf.setDrawColor(180);
+  pdf.setLineWidth(0.5);
+
+  headers.forEach((h, i) => {
+    const cx = x + i * colW;
+    pdf.setFillColor(245, 247, 250);
+    pdf.rect(cx, y, colW, headerH, "FD");
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7);
+    pdf.setTextColor(...INK);
+    pdf.text(h, cx + colW / 2, y + 9, { align: "center" });
+  });
+
+  const valY = y + headerH;
+  values.forEach((v, i) => {
+    const cx = x + i * colW;
+    pdf.rect(cx, valY, colW, rowH);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(...INK);
+    const text = Math.abs(v) < 0.005 ? "R -" : pdfTotal(v);
+    pdf.text(text, cx + colW / 2, valY + 11, { align: "center" });
+  });
+
+  const totalX = x + 5 * colW;
+  pdf.setFillColor(...NAVY);
+  pdf.rect(totalX, y, 80, headerH + rowH, "F");
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.text(pdfTotal(totalDue), totalX + 40, y + headerH + rowH / 2 + 3, { align: "center" });
+}
+
 export async function generateStatementPDF(
   customer: CustomerRow,
-  mode: StatementMode,
-  from: string,
   to: string,
-  data:
-    | {
-        mode: "open";
-        rows: { invoice: DocumentRow; paid: number; balance: number }[];
-        totalOutstanding: number;
-      }
-    | {
-        mode: "activity";
-        ledger: {
-          kind: "invoice" | "payment";
-          date: string;
-          invoice: DocumentRow;
-          amount: number;
-          payment?: PaymentRow;
-        }[];
-        openingBalance: number;
-        closingBalance: number;
-      },
+  data: {
+    accountSummary: StatementAccountSummary;
+    ledgerRows: StatementLedgerRow[];
+    aging: AgingBuckets;
+  },
 ) {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const W = pdf.internal.pageSize.getWidth();
@@ -326,81 +401,128 @@ export async function generateStatementPDF(
   const logo = await loadLogo();
 
   if (logo) {
-    pdf.addImage(logo, "PNG", M, 28, 56, 56);
+    pdf.addImage(logo, "PNG", M, 20, 100, 100);
+  } else {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(14);
+    pdf.setTextColor(...INK);
+    pdf.text(COMPANY.name.toUpperCase(), M, 50);
   }
 
   pdf.setTextColor(...NAVY);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(22);
-  pdf.text("Customer Statement", W - M, 48, { align: "right" });
+  pdf.setFontSize(28);
+  pdf.text("Statement", W - M, 48, { align: "right" });
 
-  pdf.setFontSize(9);
-  pdf.setTextColor(...MUTED);
-  pdf.text(`Period: ${fmtDate(from)} — ${fmtDate(to)}`, W - M, 64, { align: "right" });
-  pdf.text(
-    mode === "open" ? "Open invoices" : "Activity statement",
-    W - M,
-    76,
-    { align: "right" },
-  );
+  const metaW = 160;
+  const metaX = W - M - metaW;
+  drawMetaBox(pdf, metaX, 58, metaW, [
+    ["Date", fmtDate(to)],
+    ["Statement #", statementNumber(customer.id)],
+    ["Customer ID", customerCode(customer.name)],
+    ["Page", "1 of 1"],
+  ]);
 
-  let y = 100;
-  drawNavyBar(pdf, M, y, W - M * 2, 16, "Customer");
+  let y = 136;
+  const halfW = (W - M * 2 - 8) / 2;
+
+  drawNavyBar(pdf, M, y, halfW, 16, "Bill To:");
+  drawNavyBar(pdf, M + halfW + 8, y, halfW, 16, "Account Summary");
+
   y += 16;
+  const boxH = 64;
   pdf.setDrawColor(180);
-  pdf.rect(M, y, W - M * 2, 48);
+  pdf.setLineWidth(0.5);
+  pdf.rect(M, y, halfW, boxH);
+
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
   pdf.setTextColor(...INK);
-  pdf.text(customer.name, M + 6, y + 14);
-  if (customer.billing_address) pdf.text(customer.billing_address, M + 6, y + 26);
-  if (customer.vat_number) pdf.text(`VAT: ${customer.vat_number}`, M + 6, y + 38);
-  y += 60;
-
-  if (data.mode === "open") {
-    autoTable(pdf, {
-      startY: y,
-      head: [["Invoice #", "Date", "Due", "Total", "Paid", "Balance"]],
-      body: data.rows.map((r) => [
-        r.invoice.doc_number,
-        fmtDate(r.invoice.doc_date),
-        fmtDate(r.invoice.due_date),
-        pdfTotal(r.invoice.total),
-        pdfTotal(r.paid),
-        pdfTotal(r.balance),
-      ]),
-      headStyles: { fillColor: NAVY, textColor: 255, fontStyle: "bold", fontSize: 8 },
-      styles: { font: "helvetica", fontSize: 8, textColor: INK },
-      margin: { left: M, right: M },
-    });
-    const endY = (pdf as any).lastAutoTable?.finalY ?? y + 40;
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.text("Total outstanding:", M, endY + 24);
-    pdf.text(pdfTotal(data.totalOutstanding), W - M, endY + 24, { align: "right" });
-  } else {
-    pdf.setFontSize(9);
-    pdf.text(`Opening balance: ${pdfTotal(data.openingBalance)}`, M, y);
-    y += 16;
-    autoTable(pdf, {
-      startY: y,
-      head: [["Date", "Type", "Reference", "Amount"]],
-      body: data.ledger.map((row) => [
-        fmtDate(row.date),
-        row.kind === "invoice" ? "Invoice" : "Payment",
-        row.kind === "invoice" ? row.invoice.doc_number : row.payment?.reference || row.invoice.doc_number,
-        row.kind === "invoice" ? pdfTotal(row.amount) : `-${pdfMoney(row.amount)}`,
-      ]),
-      headStyles: { fillColor: NAVY, textColor: 255, fontStyle: "bold", fontSize: 8 },
-      styles: { font: "helvetica", fontSize: 8, textColor: INK },
-      margin: { left: M, right: M },
-    });
-    const endY = (pdf as any).lastAutoTable?.finalY ?? y + 40;
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.text("Closing balance:", M, endY + 24);
-    pdf.text(pdfTotal(data.closingBalance), W - M, endY + 24, { align: "right" });
+  let by = y + 12;
+  pdf.text(customer.name, M + 6, by);
+  by += 11;
+  if (customer.billing_address) {
+    const lines = pdf.splitTextToSize(customer.billing_address, halfW - 12);
+    pdf.text(lines, M + 6, by);
+    by += lines.length * 11;
+  }
+  if (customer.vat_number) {
+    pdf.setFontSize(8);
+    pdf.text(`Vat No: ${customer.vat_number}`, M + 6, by + 4);
   }
 
-  pdf.save(`statement-${customer.name.replace(/\s+/g, "-").toLowerCase()}-${from}.pdf`);
+  drawAccountSummary(pdf, M + halfW + 8, y, halfW, data.accountSummary);
+
+  y += boxH + 10;
+
+  const paddedRows: (string | number)[][] = [];
+  for (let i = 0; i < STATEMENT_TABLE_ROWS; i++) {
+    const row = data.ledgerRows[i];
+    if (row) {
+      paddedRows.push([
+        fmtDateSlash(row.date),
+        row.invoiceNo,
+        row.description,
+        row.debit > 0 ? pdfColumnAmount(row.debit) : "R -",
+        row.credit > 0 ? pdfColumnAmount(row.credit) : "R -",
+        pdfTotal(row.lineTotal),
+      ]);
+    } else {
+      paddedRows.push(["", "", "", "", "", ""]);
+    }
+  }
+
+  autoTable(pdf, {
+    startY: y,
+    head: [["Date", "Invoice #", "Description", "Debits", "Credits", "Line Total"]],
+    body: paddedRows,
+    headStyles: {
+      fillColor: NAVY,
+      textColor: 255,
+      fontStyle: "bold",
+      fontSize: 8,
+      halign: "center",
+    },
+    styles: { font: "helvetica", fontSize: 8, textColor: INK, cellPadding: 3 },
+    alternateRowStyles: { fillColor: ROW_ALT },
+    columnStyles: {
+      0: { cellWidth: 62 },
+      1: { halign: "center", cellWidth: 48 },
+      2: { halign: "left" },
+      3: { halign: "right", cellWidth: 72 },
+      4: { halign: "right", cellWidth: 72 },
+      5: { halign: "right", cellWidth: 72 },
+    },
+    margin: { left: M, right: M },
+  });
+
+  const tableEndY = (pdf as any).lastAutoTable?.finalY ?? y + 200;
+  let footerY = tableEndY + 8;
+
+  drawAgingTable(pdf, M, footerY, W - M * 2, data.aging, data.accountSummary.totalBalanceDue);
+
+  footerY += 44;
+  pdf.setDrawColor(180);
+  pdf.line(M, footerY, W - M, footerY);
+  footerY += 20;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(...INK);
+  pdf.text("Thank you for your business!", W / 2, footerY, { align: "center" });
+  footerY += 16;
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(...MUTED);
+  pdf.text(
+    `Should you have any enquiries concerning this statement, please contact ${COMPANY.contact} on ${COMPANY.phone}`,
+    W / 2,
+    footerY,
+    { align: "center" },
+  );
+  footerY += 20;
+  pdf.line(M + 80, footerY, W - M - 80, footerY);
+  footerY += 12;
+  pdf.text(`${COMPANY.address}, E-mail: ${COMPANY.email}`, W / 2, footerY, { align: "center" });
+
+  pdf.save(`statement-${customer.name.replace(/\s+/g, "-").toLowerCase()}-${to}.pdf`);
 }

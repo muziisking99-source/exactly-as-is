@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./auth";
-import { money, dueDateFromDocDate } from "./format";
+import { money, dueDateFromDocDate, displayInvoiceNumber } from "./format";
 
 export type DocType = "quote" | "invoice" | "delivery_note" | "job_card";
 
@@ -74,6 +74,10 @@ export interface FormLineItem {
   product_id?: string | null;
 }
 
+export function isValidLineItem(item: FormLineItem): boolean {
+  return item.description.trim().length > 0;
+}
+
 export interface JobTask {
   id: string;
   job_card_id: string;
@@ -112,6 +116,119 @@ export interface PaymentRow {
 }
 
 export type StatementMode = "open" | "activity";
+
+export interface AgingBuckets {
+  days120Plus: number;
+  days90: number;
+  days60: number;
+  days30: number;
+  current: number;
+}
+
+export interface StatementLedgerRow {
+  date: string;
+  invoiceNo: string;
+  description: string;
+  debit: number;
+  credit: number;
+  lineTotal: number;
+}
+
+export interface StatementAccountSummary {
+  previousBalance: number;
+  credits: number;
+  debits: number;
+  totalBalanceDue: number;
+}
+
+export function computeAging(
+  rows: { invoice: DocumentRow; balance: number }[],
+  asOfDate: string,
+): AgingBuckets {
+  const buckets: AgingBuckets = { days120Plus: 0, days90: 0, days60: 0, days30: 0, current: 0 };
+  const asOf = new Date(`${asOfDate}T12:00:00`);
+  for (const { invoice, balance } of rows) {
+    if (balance <= 0.001) continue;
+    const dueStr = invoice.due_date ?? dueDateFromDocDate(invoice.doc_date);
+    const due = new Date(`${dueStr}T12:00:00`);
+    const daysPastDue = Math.floor((asOf.getTime() - due.getTime()) / 86400000);
+    if (daysPastDue <= 0) buckets.current += balance;
+    else if (daysPastDue <= 30) buckets.days30 += balance;
+    else if (daysPastDue <= 60) buckets.days60 += balance;
+    else if (daysPastDue <= 90) buckets.days90 += balance;
+    else buckets.days120Plus += balance;
+  }
+  return buckets;
+}
+
+function buildActivityLedgerRows(
+  from: string,
+  openingBalance: number,
+  ledger: {
+    kind: "invoice" | "payment";
+    date: string;
+    invoice: DocumentRow;
+    amount: number;
+    payment?: PaymentRow;
+  }[],
+): StatementLedgerRow[] {
+  const rows: StatementLedgerRow[] = [];
+  let running = openingBalance;
+
+  if (Math.abs(openingBalance) > 0.005) {
+    rows.push({
+      date: from,
+      invoiceNo: "",
+      description: "Previous Balance (Forwarded)",
+      debit: openingBalance > 0 ? openingBalance : 0,
+      credit: openingBalance < 0 ? -openingBalance : 0,
+      lineTotal: running,
+    });
+  }
+
+  for (const entry of ledger) {
+    if (entry.kind === "invoice") {
+      running += entry.amount;
+      rows.push({
+        date: entry.date,
+        invoiceNo: displayInvoiceNumber(entry.invoice.doc_number),
+        description: "INVOICE",
+        debit: entry.amount,
+        credit: 0,
+        lineTotal: running,
+      });
+    } else {
+      running -= entry.amount;
+      rows.push({
+        date: entry.date,
+        invoiceNo: displayInvoiceNumber(entry.invoice.doc_number),
+        description: "Payment Thank You",
+        debit: 0,
+        credit: entry.amount,
+        lineTotal: running,
+      });
+    }
+  }
+
+  return rows;
+}
+
+function buildOpenLedgerRows(
+  rows: { invoice: DocumentRow; paid: number; balance: number }[],
+): StatementLedgerRow[] {
+  let running = 0;
+  return rows.map((r) => {
+    running += r.balance;
+    return {
+      date: r.invoice.doc_date,
+      invoiceNo: displayInvoiceNumber(r.invoice.doc_number),
+      description: "INVOICE",
+      debit: Number(r.invoice.total),
+      credit: r.paid,
+      lineTotal: running,
+    };
+  });
+}
 
 export function invoiceAmountPaid(payments: Pick<PaymentRow, "amount">[]): number {
   return payments.reduce((s, p) => s + Number(p.amount), 0);
@@ -469,13 +586,25 @@ export function useCustomerStatementData(
             row.invoice.doc_date <= to &&
             !["paid", "cancelled"].includes(row.invoice.status),
         );
+        const totalOutstanding = open.reduce((s, r) => s + r.balance, 0);
+        const allOpen = withBalance.filter(
+          (row) => row.balance > 0.001 && !["paid", "cancelled"].includes(row.invoice.status),
+        );
         return {
           customer: customer as CustomerRow,
           mode,
           from,
           to,
           rows: open,
-          totalOutstanding: open.reduce((s, r) => s + r.balance, 0),
+          totalOutstanding,
+          accountSummary: {
+            previousBalance: 0,
+            credits: open.reduce((s, r) => s + r.paid, 0),
+            debits: open.reduce((s, r) => s + Number(r.invoice.total), 0),
+            totalBalanceDue: totalOutstanding,
+          },
+          ledgerRows: buildOpenLedgerRows(open),
+          aging: computeAging(allOpen, to),
         };
       }
 
@@ -518,6 +647,9 @@ export function useCustomerStatementData(
         inRangeInvoices.reduce((s, r) => s + Number(r.invoice.total), 0) -
         invoiceAmountPaid(inRangePayments);
       const closingBalance = openingBalance + periodNet;
+      const allOpen = withBalance.filter(
+        (row) => row.balance > 0.001 && !["paid", "cancelled"].includes(row.invoice.status),
+      );
 
       return {
         customer: customer as CustomerRow,
@@ -527,6 +659,14 @@ export function useCustomerStatementData(
         ledger,
         openingBalance,
         closingBalance,
+        accountSummary: {
+          previousBalance: openingBalance,
+          credits: invoiceAmountPaid(inRangePayments),
+          debits: inRangeInvoices.reduce((s, r) => s + Number(r.invoice.total), 0),
+          totalBalanceDue: closingBalance,
+        },
+        ledgerRows: buildActivityLedgerRows(from, openingBalance, ledger),
+        aging: computeAging(allOpen, to),
       };
     },
   });
@@ -796,9 +936,10 @@ export function useConvertQuoteToInvoice() {
         .single();
       if (error) throw error;
       const { data: items } = await supabase.from("line_items").select("*").eq("document_id", quote.id);
-      if (items && items.length) {
+      const validItems = (items ?? []).filter((it: any) => it.description?.trim());
+      if (validItems.length) {
         await supabase.from("line_items").insert(
-          items.map((it: any) => ({
+          validItems.map((it: any) => ({
             document_id: (inv as any).id,
             product_id: it.product_id,
             description: it.description,
@@ -961,7 +1102,8 @@ export function useCreateQuote() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (input: QuoteFormInput) => {
-      const subtotal = input.items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+      const validItems = input.items.filter(isValidLineItem);
+      const subtotal = validItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
       const tax_amount = subtotal * (input.tax_rate / 100);
       const total = subtotal + tax_amount;
       const doc_number = await nextDocNumber("quote");
@@ -988,9 +1130,9 @@ export function useCreateQuote() {
         .select()
         .single();
       if (error) throw error;
-      if (input.items.length) {
+      if (validItems.length) {
         await supabase.from("line_items").insert(
-          input.items.map((it, i) => ({
+          validItems.map((it, i) => ({
             document_id: (doc as any).id,
             product_id: it.product_id || null,
             description: it.description,
@@ -1016,7 +1158,8 @@ export function useCreateInvoice() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (input: InvoiceFormInput) => {
-      const subtotal = input.items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+      const validItems = input.items.filter(isValidLineItem);
+      const subtotal = validItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
       const tax_amount = subtotal * (input.tax_rate / 100);
       const total = subtotal + tax_amount;
       const doc_number = await nextDocNumber("invoice");
@@ -1045,9 +1188,9 @@ export function useCreateInvoice() {
         .select()
         .single();
       if (error) throw error;
-      if (input.items.length) {
+      if (validItems.length) {
         await supabase.from("line_items").insert(
-          input.items.map((it, i) => ({
+          validItems.map((it, i) => ({
             document_id: (doc as any).id,
             product_id: it.product_id || null,
             description: it.description,

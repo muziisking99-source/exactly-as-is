@@ -7,16 +7,61 @@ export const money = (n: number | string | null | undefined): string => {
   }).format(isNaN(v as number) ? 0 : (v as number));
 };
 
-/** PDF table amounts: `520,00` (no currency symbol in cell) */
+/** PDF table amounts: `17 046,25` (no currency symbol, space thousands) */
 export const pdfMoney = (n: number | string | null | undefined): string => {
   const v = typeof n === "string" ? parseFloat(n) : (n ?? 0);
   const num = isNaN(v as number) ? 0 : (v as number);
-  return num.toFixed(2).replace(".", ",");
+  const [whole, frac] = Math.abs(num).toFixed(2).split(".");
+  const spaced = whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${num < 0 ? "-" : ""}${spaced},${frac}`;
 };
 
-/** PDF totals: `R 520,00` */
-export const pdfTotal = (n: number | string | null | undefined): string =>
-  `R ${pdfMoney(n)}`;
+/** PDF totals: `R 17 046,25` */
+export const pdfTotal = (n: number | string | null | undefined): string => {
+  const v = typeof n === "string" ? parseFloat(n) : (n ?? 0);
+  const num = isNaN(v as number) ? 0 : (v as number);
+  if (Math.abs(num) < 0.005) return "R -";
+  if (num < 0) return `R (${pdfMoney(-num)})`;
+  return `R ${pdfMoney(num)}`;
+};
+
+/** Statement column amount — zero shows as `R -` */
+export const pdfColumnAmount = (n: number): string => {
+  if (Math.abs(n) < 0.005) return "R -";
+  if (n < 0) return `R (${pdfMoney(-n)})`;
+  return `R ${pdfMoney(n)}`;
+};
+
+export const fmtDateSlash = (d: string | Date | null | undefined): string => {
+  if (!d) return "—";
+  const date = typeof d === "string" ? new Date(d.length === 10 ? `${d}T12:00:00` : d) : d;
+  if (isNaN(date.getTime())) return "—";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}/${m}/${day}`;
+};
+
+/** Short customer code from name, e.g. "Cable Feeder Systems" → "CFS" */
+export function customerCode(name: string): string {
+  const words = name
+    .replace(/\(.*?\)/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 0 && !/^(pty|ltd|inc|co)$/i.test(w));
+  if (words.length >= 3) return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase();
+  return name.replace(/[^a-zA-Z]/g, "").slice(0, 4).toUpperCase() || "—";
+}
+
+/** Display invoice number without prefix, e.g. "INV-1707" → "1707" */
+export function displayInvoiceNumber(docNumber: string): string {
+  const match = docNumber.match(/(\d+)$/);
+  return match ? match[1] : docNumber;
+}
+
+export function statementNumber(customerId: string): string {
+  const hash = customerId.split("").reduce((h, c) => h + c.charCodeAt(0), 0);
+  return String((hash % 9000) + 1000);
+}
 
 export const fmtDate = (d: string | Date | null | undefined): string => {
   if (!d) return "—";
