@@ -144,12 +144,11 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
                       key={d.id}
                       initial={{ opacity: 1, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 1, x: 14 }}
+                      exit={{ opacity: 1, x: 14, transition: rowExitTransition }}
                       transition={{
                         delay: rowEnterDelay(i),
                         ...rowEnterTransition,
                       }}
-                      exit={{ opacity: 1, x: 14, transition: rowExitTransition }}
                       className="border-b border-border/60 hover:bg-secondary/50 transition-colors duration-150"
                     >
                       <td className="px-4 py-3">
@@ -193,12 +192,11 @@ export function DocumentList({ type, title, detailRoute, tabs, newHref }: Props)
                     key={d.id}
                     initial={{ opacity: 1, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 1, x: 14 }}
+                    exit={{ opacity: 1, x: 14, transition: rowExitTransition }}
                     transition={{
                       delay: rowEnterDelay(i),
                       ...rowEnterTransition,
                     }}
-                    exit={{ opacity: 1, x: 14, transition: rowExitTransition }}
                     className="p-4"
                   >
                     <div className="flex items-start justify-between">

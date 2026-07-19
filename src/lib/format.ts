@@ -58,9 +58,17 @@ export function displayInvoiceNumber(docNumber: string): string {
   return match ? match[1] : docNumber;
 }
 
-export function statementNumber(customerId: string): string {
-  const hash = customerId.split("").reduce((h, c) => h + c.charCodeAt(0), 0);
-  return String((hash % 9000) + 1000);
+const STATEMENT_COUNTER_KEY = "trendcap.statementCounter";
+const STATEMENT_START = 1005;
+
+/** Sequential statement number, persisted in localStorage. First call returns 1005. */
+export function statementNumber(_customerId?: string): string {
+  if (typeof window === "undefined") return String(STATEMENT_START);
+  const raw = window.localStorage.getItem(STATEMENT_COUNTER_KEY);
+  const next = raw ? parseInt(raw, 10) : STATEMENT_START;
+  const value = Number.isFinite(next) && next >= STATEMENT_START ? next : STATEMENT_START;
+  window.localStorage.setItem(STATEMENT_COUNTER_KEY, String(value + 1));
+  return String(value);
 }
 
 export const fmtDate = (d: string | Date | null | undefined): string => {
