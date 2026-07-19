@@ -91,6 +91,7 @@ export function PaymentFormDialog({
               required
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onFocus={(e) => e.target.select()}
               className="mt-1 input-field font-mono"
             />
           </div>

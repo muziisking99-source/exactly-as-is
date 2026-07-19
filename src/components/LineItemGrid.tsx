@@ -1,6 +1,7 @@
 import { Trash2, Plus } from "lucide-react";
 import { money } from "@/lib/format";
 import type { FormLineItem } from "@/lib/queries";
+import { NumberField } from "./NumberField";
 import { ProductPicker } from "./ProductPicker";
 
 export const emptyLineItem = (): FormLineItem => ({
@@ -95,12 +96,10 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
               <label className="md:hidden text-[10px] uppercase tracking-[0.1em] text-muted-navy mb-1 block text-right">
                 Qty
               </label>
-              <input
-                type="number"
-                min={0}
-                step="0.5"
+              <NumberField
                 value={it.quantity}
-                onChange={(e) => updateItem(idx, { quantity: parseFloat(e.target.value) || 0 })}
+                onValueChange={(quantity) => updateItem(idx, { quantity })}
+                emptyAs={1}
                 className="input-field text-right"
               />
             </div>
@@ -108,12 +107,9 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
               <label className="md:hidden text-[10px] uppercase tracking-[0.1em] text-muted-navy mb-1 block text-right">
                 Unit price
               </label>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
+              <NumberField
                 value={it.unit_price}
-                onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.target.value) || 0 })}
+                onValueChange={(unit_price) => updateItem(idx, { unit_price })}
                 className="input-field text-right"
               />
             </div>
@@ -141,11 +137,9 @@ export function LineItemGrid({ items, taxRate, onItemsChange, onTaxRateChange }:
       <div className="mt-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <label className="text-xs text-muted-navy">Tax rate (%)</label>
-          <input
-            type="number"
-            min={0}
+          <NumberField
             value={taxRate}
-            onChange={(e) => onTaxRateChange(parseFloat(e.target.value) || 0)}
+            onValueChange={onTaxRateChange}
             className="mt-1 w-32 input-field"
           />
         </div>

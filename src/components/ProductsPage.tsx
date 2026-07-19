@@ -8,6 +8,7 @@ import {
   type ProductRow,
 } from "@/lib/queries";
 import { money } from "@/lib/format";
+import { NumberField } from "@/components/NumberField";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -204,12 +205,9 @@ export function ProductsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-muted-navy">Unit price</label>
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
+                <NumberField
                   value={form.unit_price}
-                  onChange={(e) => setForm((f) => ({ ...f, unit_price: parseFloat(e.target.value) || 0 }))}
+                  onValueChange={(unit_price) => setForm((f) => ({ ...f, unit_price }))}
                   className="mt-1 input-field"
                 />
               </div>
